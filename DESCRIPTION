@@ -1,0 +1,45 @@
+Package: rstatic
+Title: Primitives to Generate Static SpatioTemporal Asset Catalogs
+Version: 0.0.0.9000
+Authors@R: 
+    c(person("Rolf", "Simoes",
+             email = "rolfsimoes@gmail.com",
+             role = c("aut", "cre")),
+      person("Felipe", "Carlos",
+             email = "efelipecarlos@gmail.com",
+             role = c("aut")),
+      person("Felipe", "Souza",
+             email = "lipecaso@gmail.com",
+             role = c("aut")))
+Description: Provides reusable primitives to build and serialize static
+    SpatioTemporal Asset Catalog (STAC) documents, including catalogs,
+    collections, items, assets, and links. The package implements the STAC
+    specification version 1.0.0
+    (<https://github.com/radiantearth/stac-spec>) and is intended as a
+    foundation for other tools, such as STAC generators and experiment
+    catalog builders. Optional spatial metadata extraction and thumbnail
+    rendering are supported through 'terra', and 'QGIS' style parsing
+    through 'xml2', when these packages are available.
+License: GPL (>= 3)
+URL: https://github.com/rolfsimoes/rstatic
+BugReports: https://github.com/rolfsimoes/rstatic/issues
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+Depends:
+    R (>= 3.5)
+Imports:
+    glue,
+    grDevices,
+    graphics,
+    jsonlite,
+    tools
+Suggests:
+    knitr,
+    rmarkdown,
+    terra,
+    testthat (>= 3.0.0),
+    withr,
+    xml2
+Config/testthat/edition: 3
+VignetteBuilder: knitr

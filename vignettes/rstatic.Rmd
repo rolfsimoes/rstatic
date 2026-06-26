@@ -1,0 +1,168 @@
+---
+title: "Generating a static STAC catalog with rstatic"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Generating a static STAC catalog with rstatic}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+# Some chunks use the optional 'terra' package.
+has_terra <- requireNamespace("terra", quietly = TRUE)
+```
+
+```{r setup}
+library(rstatic)
+```
+
+## Overview
+
+`rstatic` provides composable primitives to build and serialize **static**
+SpatioTemporal Asset Catalog (STAC) documents. A static catalog is a tree of
+plain JSON files linked to one another, following the
+[STAC specification](https://github.com/radiantearth/stac-spec) version
+1.0.0:
+
+```
+stac/
+  catalog.json
+  collections/
+    {collection}/
+      collection.json
+      items/
+        {item}/
+          item.json
+```
+
+This vignette walks through building such a tree from scratch. All output is
+written under a temporary directory so the vignette is fully self-contained.
+
+```{r root}
+root <- tempfile("stac-")
+```
+
+## 1. Initialize the root catalog
+
+`stac_init()` creates (or updates) the root `catalog.json`. It preserves any
+existing `child` links, so it is safe to call repeatedly.
+
+```{r catalog}
+catalog <- stac_init(
+  id = "restore-plus",
+  title = "Restore+ Catalog",
+  description = "An example static STAC catalog built with rstatic",
+  root_dir = root
+)
+catalog
+```
+
+## 2. Create and register a collection
+
+Collections group related items. `new_collection()` builds the document in
+memory and `stac_add_collection()` persists it and links it to the catalog.
+Any extra named arguments (e.g. `citation`, `doi`) are stored as additional
+collection fields.
+
+```{r collection}
+collection <- stac_add_collection(
+  catalog,
+  collection = new_collection(
+    id = "land-cover",
+    title = "Example Land Cover",
+    description = "Annual land cover maps (example data)",
+    license = "CC-BY-4.0"
+  ),
+  root_dir = root
+)
+collection
+```
+
+## 3. Spatial metadata
+
+If [terra](https://rspatial.github.io/terra/) is installed, `extract_bbox()`
+reads a raster and returns its bounding box in WGS84. A small Sentinel-2
+subset ships with the package for demonstration.
+
+```{r bbox, eval = has_terra}
+tif <- system.file("extdata/example.tif", package = "rstatic")
+bbox <- extract_bbox(tif)
+bbox
+```
+
+When `terra` is not available, you can pass a bounding box directly. The
+`as_geometry()` helper turns a bounding box into a GeoJSON polygon and has no
+external dependencies:
+
+```{r geometry}
+bbox <- c(-50, -10, -49, -9)
+geometry <- as_geometry(bbox)
+str(geometry, max.level = 2)
+```
+
+## 4. Build items
+
+Items are GeoJSON `Feature`s. Build their `properties` with
+`new_properties()` and `assets` with `new_asset()`; the asset media type is
+deduced from the file extension.
+
+```{r item}
+item <- new_item(
+  id = "land-cover-2020",
+  bbox = bbox,
+  geometry = geometry,
+  properties = new_properties(
+    datetime = "2020-01-01T00:00:00Z",
+    description = "Example land cover map for 2020"
+  ),
+  assets = list(
+    data = new_asset("land-cover-2020.tif", title = "Land Cover 2020")
+  )
+)
+item
+```
+
+## 5. Add items to the collection
+
+`stac_add_items()` writes each item, links it from the collection, and updates
+the collection's spatial and temporal extent automatically.
+
+```{r add-items}
+collection <- stac_add_items(collection, item, root_dir = root)
+collection$extent$spatial$bbox[[1]]
+collection$extent$temporal$interval[[1]]
+```
+
+## 6. Thumbnails and styles (optional)
+
+With `terra`, `new_thumbnail()` renders a PNG preview. Styles can be built
+explicitly with `stac_style()` or parsed from a QGIS `.qml` file with
+`qml_to_style()` (requires `xml2`).
+
+```{r style}
+style <- stac_style(min = 0, max = 255, palette = c("black", "white"))
+style$type
+```
+
+```{r thumbnail, eval = has_terra}
+thumb <- new_thumbnail(
+  collection_id = "land-cover",
+  item_id = "land-cover-2020",
+  asset_href = system.file("extdata/example.tif", package = "rstatic"),
+  width = 200,
+  root_dir = root
+)
+thumb$roles
+```
+
+## Resulting catalog
+
+The final directory tree contains the linked JSON documents:
+
+```{r tree}
+list.files(file.path(root, "stac"), recursive = TRUE)
+```

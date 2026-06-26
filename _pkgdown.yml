@@ -1,0 +1,35 @@
+url: https://rolfsimoes.github.io/rstatic/
+template:
+  bootstrap: 5
+
+reference:
+- title: Catalogs
+  contents:
+  - new_catalog
+  - stac_init
+- title: Collections
+  contents:
+  - new_collection
+  - stac_add_collection
+- title: Items, properties and assets
+  contents:
+  - new_item
+  - new_properties
+  - new_asset
+  - stac_add_items
+- title: Persistence
+  contents:
+  - stac_save
+- title: Spatial helpers
+  contents:
+  - extract_bbox
+  - as_geometry
+- title: Styles and thumbnails
+  contents:
+  - stac_style
+  - qml_to_style
+  - new_thumbnail
+- title: Printing
+  contents:
+  - print.doc_catalog
+

@@ -86,18 +86,15 @@
 <span>  description <span class="op">=</span> <span class="st">"A minimal static STAC catalog"</span>,</span>
 <span>  root_dir <span class="op">=</span> <span class="va">root</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Catalog example initialized/updated at /tmp/RtmpMajh8n/stac-2dcc367caca80/stac/catalog.json</span></span>
+<span><span class="co">#&gt; Catalog example initialized/updated at /tmp/RtmpGSJL3d/stac-40dac6ac2aaab/stac/catalog.json</span></span>
 <span></span>
 <span><span class="co"># 2. Add a collection</span></span>
-<span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/collection_functions.html">stac_add_collection</a></span><span class="op">(</span></span>
-<span>  <span class="va">catalog</span>,</span>
-<span>  collection <span class="op">=</span> <span class="fu"><a href="reference/collection_functions.html">new_collection</a></span><span class="op">(</span></span>
-<span>    id <span class="op">=</span> <span class="st">"land-cover"</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"Land Cover"</span>,</span>
-<span>    description <span class="op">=</span> <span class="st">"Example land cover collection"</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  root_dir <span class="op">=</span> <span class="va">root</span></span>
+<span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/collection_functions.html">new_collection</a></span><span class="op">(</span></span>
+<span>  id <span class="op">=</span> <span class="st">"land-cover"</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Land Cover"</span>,</span>
+<span>  description <span class="op">=</span> <span class="st">"Example land cover collection"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/collection_functions.html">stac_add_collection</a></span><span class="op">(</span><span class="va">catalog</span>, collection <span class="op">=</span> <span class="va">collection</span>, root_dir <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Collection land-cover added to Catalog.</span></span>
 <span></span>
 <span><span class="co"># 3. Build and add an item</span></span>
@@ -151,8 +148,16 @@
 <td align="left">Build items, properties and assets</td>
 </tr>
 <tr>
-<td align="left"><code><a href="reference/item_functions.html">stac_add_items()</a></code></td>
-<td align="left">Persist items and update collection extent</td>
+<td align="left">
+<code><a href="reference/collection_functions.html">stac_add_collection()</a></code> / <code><a href="reference/item_functions.html">stac_add_items()</a></code>
+</td>
+<td align="left">Register collections/items and return the parent</td>
+</tr>
+<tr>
+<td align="left">
+<code><a href="reference/stac_add_link.html">stac_add_link()</a></code> / <code><a href="reference/stac_add_asset.html">stac_add_asset()</a></code>
+</td>
+<td align="left">Pure builders for links and assets</td>
 </tr>
 <tr>
 <td align="left"><code><a href="reference/stac_save.html">stac_save()</a></code></td>

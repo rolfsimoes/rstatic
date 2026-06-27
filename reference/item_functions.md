@@ -119,7 +119,7 @@ stac_add_items(collection, ..., root_dir = ".")
 
 - `new_properties()`: a `list` of properties.
 
-- `new_asset()`: a `list` describing an asset.
+- `new_asset()`: a `doc_asset` object describing an asset.
 
 - `new_item()`: a `doc_item` object.
 
@@ -141,7 +141,7 @@ item$type
 
 dir <- tempfile("stac-")
 cat <- stac_init("cat", "Catalog", "Example", root_dir = dir)
-#> Catalog cat initialized/updated at /tmp/Rtmp5LCnvu/stac-1d271bf62351/stac/catalog.json
+#> Catalog cat initialized/updated at /tmp/RtmpRxJO8Z/stac-1c401852e06/stac/catalog.json
 col <- stac_add_collection(
   cat,
   collection = new_collection("col", "Collection", "Example"),
@@ -149,5 +149,5 @@ col <- stac_add_collection(
 )
 #> Collection col added to Catalog.
 stac_add_items(col, item, root_dir = dir)
-#> Added 1 item(s) to collection col.
+#> Added 1 item(s) to collection cat.
 ```

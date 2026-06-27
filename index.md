@@ -53,18 +53,15 @@ catalog <- stac_init(
   description = "A minimal static STAC catalog",
   root_dir = root
 )
-#> Catalog example initialized/updated at /tmp/RtmpMajh8n/stac-2dcc367caca80/stac/catalog.json
+#> Catalog example initialized/updated at /tmp/RtmpGSJL3d/stac-40dac6ac2aaab/stac/catalog.json
 
 # 2. Add a collection
-collection <- stac_add_collection(
-  catalog,
-  collection = new_collection(
-    id = "land-cover",
-    title = "Land Cover",
-    description = "Example land cover collection"
-  ),
-  root_dir = root
+collection <- new_collection(
+  id = "land-cover",
+  title = "Land Cover",
+  description = "Example land cover collection"
 )
+catalog <- stac_add_collection(catalog, collection = collection, root_dir = root)
 #> Collection land-cover added to Catalog.
 
 # 3. Build and add an item
@@ -98,7 +95,8 @@ list.files(file.path(root, "stac"), recursive = TRUE)
 | [`new_catalog()`](https://rolfsimoes.github.io/rstatic/reference/catalog_functions.md) / [`stac_init()`](https://rolfsimoes.github.io/rstatic/reference/catalog_functions.md) | Create / write a root catalog |
 | [`new_collection()`](https://rolfsimoes.github.io/rstatic/reference/collection_functions.md) / [`stac_add_collection()`](https://rolfsimoes.github.io/rstatic/reference/collection_functions.md) | Create / register a collection |
 | [`new_item()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md), [`new_properties()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md), [`new_asset()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md) | Build items, properties and assets |
-| [`stac_add_items()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md) | Persist items and update collection extent |
+| [`stac_add_collection()`](https://rolfsimoes.github.io/rstatic/reference/collection_functions.md) / [`stac_add_items()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md) | Register collections/items and return the parent |
+| [`stac_add_link()`](https://rolfsimoes.github.io/rstatic/reference/stac_add_link.md) / [`stac_add_asset()`](https://rolfsimoes.github.io/rstatic/reference/stac_add_asset.md) | Pure builders for links and assets |
 | [`stac_save()`](https://rolfsimoes.github.io/rstatic/reference/stac_save.md) | Write any document to its canonical path |
 | [`extract_bbox()`](https://rolfsimoes.github.io/rstatic/reference/geom_functions.md) / [`as_geometry()`](https://rolfsimoes.github.io/rstatic/reference/geom_functions.md) | Spatial metadata helpers |
 | [`stac_style()`](https://rolfsimoes.github.io/rstatic/reference/style_functions.md) / [`qml_to_style()`](https://rolfsimoes.github.io/rstatic/reference/style_functions.md) | Thumbnail style objects |

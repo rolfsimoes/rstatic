@@ -19,6 +19,10 @@
   [`new_item()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md)
   [`stac_add_items()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md)
   : Create STAC items, properties, and assets
+- [`stac_add_asset()`](https://rolfsimoes.github.io/rstatic/reference/stac_add_asset.md)
+  : Add an asset to a STAC document
+- [`stac_add_link()`](https://rolfsimoes.github.io/rstatic/reference/stac_add_link.md)
+  : Add a link to a STAC document
 
 ## Persistence
 
@@ -38,10 +42,15 @@
   : STAC style objects for thumbnails
 - [`new_thumbnail()`](https://rolfsimoes.github.io/rstatic/reference/new_thumbnail.md)
   : Generate a thumbnail asset
+- [`plot(`*`<doc_asset>`*`)`](https://rolfsimoes.github.io/rstatic/reference/plot_rstatic.md)
+  : Plot a STAC asset
 
 ## Printing
 
 - [`print(`*`<doc_catalog>`*`)`](https://rolfsimoes.github.io/rstatic/reference/print_rstatic.md)
   [`print(`*`<doc_collection>`*`)`](https://rolfsimoes.github.io/rstatic/reference/print_rstatic.md)
   [`print(`*`<doc_item>`*`)`](https://rolfsimoes.github.io/rstatic/reference/print_rstatic.md)
+  [`print(`*`<doc_asset>`*`)`](https://rolfsimoes.github.io/rstatic/reference/print_rstatic.md)
+  [`print(`*`<doc_link>`*`)`](https://rolfsimoes.github.io/rstatic/reference/print_rstatic.md)
+  [`print(`*`<doc_links>`*`)`](https://rolfsimoes.github.io/rstatic/reference/print_rstatic.md)
   : Print STAC documents

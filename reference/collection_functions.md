@@ -75,7 +75,8 @@ stac_add_collection(catalog, collection = NULL, ..., root_dir = ".")
 
 - `new_collection()`: a `doc_collection` object.
 
-- `stac_add_collection()`: invisibly, the saved `doc_collection`.
+- `stac_add_collection()`: invisibly, the updated `doc_catalog` (the
+  parent), so it can be chained with another call.
 
 ## Examples
 
@@ -90,7 +91,7 @@ col$type
 
 dir <- tempfile("stac-")
 cat <- stac_init("cat", "Catalog", "Example", root_dir = dir)
-#> Catalog cat initialized/updated at /tmp/Rtmp5LCnvu/stac-1d27561f91a5/stac/catalog.json
-stac_add_collection(cat, collection = col, root_dir = dir)
+#> Catalog cat initialized/updated at /tmp/RtmpRxJO8Z/stac-1c4075005ce7/stac/catalog.json
+cat <- stac_add_collection(cat, collection = col, root_dir = dir)
 #> Collection my-collection added to Catalog.
 ```

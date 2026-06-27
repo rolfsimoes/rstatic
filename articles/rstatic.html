@@ -96,38 +96,36 @@ links, so it is safe to call repeatedly.</p>
 <span>  description <span class="op">=</span> <span class="st">"An example static STAC catalog built with rstatic"</span>,</span>
 <span>  root_dir <span class="op">=</span> <span class="va">root</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Catalog restore-plus initialized/updated at /tmp/RtmpKNxIUB/stac-1e7a787f00a6/stac/catalog.json</span></span>
+<span><span class="co">#&gt; Catalog restore-plus initialized/updated at /tmp/Rtmp4Pc8u9/stac-1db56f0ef15f/stac/catalog.json</span></span>
 <span><span class="va">catalog</span></span>
-<span><span class="co">#&gt; &lt;STAC Catalog&gt;</span></span>
-<span><span class="co">#&gt;   id:    restore-plus</span></span>
-<span><span class="co">#&gt;   title: Restore+ Catalog</span></span>
-<span><span class="co">#&gt;   links: 2</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;"># STAC Catalog</span> <span style="color: #555555;">restore-plus</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">title      </span>  Restore+ Catalog</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">description</span>  An example static STAC catalog built with rstatic</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">links      </span>  2</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="create-and-register-a-collection">2. Create and register a collection<a class="anchor" aria-label="anchor" href="#create-and-register-a-collection"></a>
 </h2>
 <p>Collections group related items. <code><a href="../reference/collection_functions.html">new_collection()</a></code> builds
 the document in memory and <code><a href="../reference/collection_functions.html">stac_add_collection()</a></code> persists
-it and links it to the catalog. Any extra named arguments
-(e.g. <code>citation</code>, <code>doi</code>) are stored as additional
-collection fields.</p>
+it, links it to the catalog, and returns the updated catalog. Any extra
+named arguments (e.g. <code>citation</code>, <code>doi</code>) are
+stored as additional collection fields.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/collection_functions.html">stac_add_collection</a></span><span class="op">(</span></span>
-<span>  <span class="va">catalog</span>,</span>
-<span>  collection <span class="op">=</span> <span class="fu"><a href="../reference/collection_functions.html">new_collection</a></span><span class="op">(</span></span>
-<span>    id <span class="op">=</span> <span class="st">"land-cover"</span>,</span>
-<span>    title <span class="op">=</span> <span class="st">"Example Land Cover"</span>,</span>
-<span>    description <span class="op">=</span> <span class="st">"Annual land cover maps (example data)"</span>,</span>
-<span>    license <span class="op">=</span> <span class="st">"CC-BY-4.0"</span></span>
-<span>  <span class="op">)</span>,</span>
-<span>  root_dir <span class="op">=</span> <span class="va">root</span></span>
+<code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/collection_functions.html">new_collection</a></span><span class="op">(</span></span>
+<span>  id <span class="op">=</span> <span class="st">"land-cover"</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Example Land Cover"</span>,</span>
+<span>  description <span class="op">=</span> <span class="st">"Annual land cover maps (example data)"</span>,</span>
+<span>  license <span class="op">=</span> <span class="st">"CC-BY-4.0"</span></span>
 <span><span class="op">)</span></span>
+<span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/collection_functions.html">stac_add_collection</a></span><span class="op">(</span><span class="va">catalog</span>, collection <span class="op">=</span> <span class="va">collection</span>, root_dir <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Collection land-cover added to Catalog.</span></span>
 <span><span class="va">collection</span></span>
-<span><span class="co">#&gt; &lt;STAC Collection&gt;</span></span>
-<span><span class="co">#&gt;   id:    land-cover</span></span>
-<span><span class="co">#&gt;   title: Example Land Cover</span></span>
-<span><span class="co">#&gt;   links: 3</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;"># STAC Collection</span> <span style="color: #555555;">land-cover</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">title      </span>  Example Land Cover</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">description</span>  Annual land cover maps (example data)</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">license    </span>  CC-BY-4.0</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">links      </span>  3</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="spatial-metadata">3. Spatial metadata<a class="anchor" aria-label="anchor" href="#spatial-metadata"></a>
@@ -175,10 +173,11 @@ is deduced from the file extension.</p>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">item</span></span>
-<span><span class="co">#&gt; &lt;STAC Item&gt;</span></span>
-<span><span class="co">#&gt;   id:     land-cover-2020</span></span>
-<span><span class="co">#&gt;   assets: 1</span></span>
-<span><span class="co">#&gt;   links:  4</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;"># STAC Item</span> <span style="color: #555555;">land-cover-2020</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">bbox    </span>  -50, -10, -49, -9</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">datetime</span>  2020-01-01T00:00:00Z</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">assets  </span>  data</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">links   </span>  4</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="add-items-to-the-collection">5. Add items to the collection<a class="anchor" aria-label="anchor" href="#add-items-to-the-collection"></a>
@@ -217,9 +216,12 @@ or parsed from a QGIS <code>.qml</code> file with
 <span>  width <span class="op">=</span> <span class="fl">200</span>,</span>
 <span>  root_dir <span class="op">=</span> <span class="va">root</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">thumb</span><span class="op">$</span><span class="va">roles</span></span>
-<span><span class="co">#&gt; [[1]]</span></span>
-<span><span class="co">#&gt; [1] "thumbnail"</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">thumb</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="rstatic_files/figure-html/thumbnail-1.png" class="r-plt" alt="Rendered thumbnail for the land-cover-2020 item." width="700"><p class="caption">
+Rendered thumbnail for the land-cover-2020 item.
+</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="resulting-catalog">Resulting catalog<a class="anchor" aria-label="anchor" href="#resulting-catalog"></a>

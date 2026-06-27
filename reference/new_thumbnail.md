@@ -83,18 +83,8 @@ if (requireNamespace("terra", quietly = TRUE)) {
     )
   }
 }
-#> $href
-#> [1] "thumbnail.png"
-#> 
-#> $type
-#> [1] "image/png"
-#> 
-#> $roles
-#> $roles[[1]]
-#> [1] "thumbnail"
-#> 
-#> 
-#> $title
-#> [1] "Thumbnail"
-#> 
+#> # STAC Asset Thumbnail
+#>   href   thumbnail.png
+#>   type   image/png
+#>   roles  thumbnail
 ```

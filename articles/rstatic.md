@@ -45,12 +45,12 @@ catalog <- stac_init(
   description = "An example static STAC catalog built with rstatic",
   root_dir = root
 )
-#> Catalog restore-plus initialized/updated at /tmp/RtmpKNxIUB/stac-1e7a787f00a6/stac/catalog.json
+#> Catalog restore-plus initialized/updated at /tmp/Rtmp4Pc8u9/stac-1db56f0ef15f/stac/catalog.json
 catalog
-#> <STAC Catalog>
-#>   id:    restore-plus
-#>   title: Restore+ Catalog
-#>   links: 2
+#> # STAC Catalog restore-plus
+#>   title        Restore+ Catalog
+#>   description  An example static STAC catalog built with rstatic
+#>   links        2
 ```
 
 ## 2. Create and register a collection
@@ -59,27 +59,26 @@ Collections group related items.
 [`new_collection()`](https://rolfsimoes.github.io/rstatic/reference/collection_functions.md)
 builds the document in memory and
 [`stac_add_collection()`](https://rolfsimoes.github.io/rstatic/reference/collection_functions.md)
-persists it and links it to the catalog. Any extra named arguments
-(e.g. `citation`, `doi`) are stored as additional collection fields.
+persists it, links it to the catalog, and returns the updated catalog.
+Any extra named arguments (e.g. `citation`, `doi`) are stored as
+additional collection fields.
 
 ``` r
 
-collection <- stac_add_collection(
-  catalog,
-  collection = new_collection(
-    id = "land-cover",
-    title = "Example Land Cover",
-    description = "Annual land cover maps (example data)",
-    license = "CC-BY-4.0"
-  ),
-  root_dir = root
+collection <- new_collection(
+  id = "land-cover",
+  title = "Example Land Cover",
+  description = "Annual land cover maps (example data)",
+  license = "CC-BY-4.0"
 )
+catalog <- stac_add_collection(catalog, collection = collection, root_dir = root)
 #> Collection land-cover added to Catalog.
 collection
-#> <STAC Collection>
-#>   id:    land-cover
-#>   title: Example Land Cover
-#>   links: 3
+#> # STAC Collection land-cover
+#>   title        Example Land Cover
+#>   description  Annual land cover maps (example data)
+#>   license      CC-BY-4.0
+#>   links        3
 ```
 
 ## 3. Spatial metadata
@@ -137,10 +136,11 @@ item <- new_item(
   )
 )
 item
-#> <STAC Item>
-#>   id:     land-cover-2020
-#>   assets: 1
-#>   links:  4
+#> # STAC Item land-cover-2020
+#>   bbox      -50, -10, -49, -9
+#>   datetime  2020-01-01T00:00:00Z
+#>   assets    data
+#>   links     4
 ```
 
 ## 5. Add items to the collection
@@ -189,10 +189,13 @@ thumb <- new_thumbnail(
   width = 200,
   root_dir = root
 )
-thumb$roles
-#> [[1]]
-#> [1] "thumbnail"
+plot(thumb)
 ```
+
+![Rendered thumbnail for the land-cover-2020
+item.](rstatic_files/figure-html/thumbnail-1.png)
+
+Rendered thumbnail for the land-cover-2020 item.
 
 ## Resulting catalog
 

@@ -39,7 +39,7 @@
 #' @return
 #' \itemize{
 #'   \item `new_properties()`: a `list` of properties.
-#'   \item `new_asset()`: a `list` describing an asset.
+#'   \item `new_asset()`: a `doc_asset` object describing an asset.
 #'   \item `new_item()`: a `doc_item` object.
 #'   \item `stac_add_items()`: invisibly, the updated `doc_collection`.
 #' }
@@ -102,7 +102,7 @@ new_asset <- function(href,
   for (nm in names(extras)) {
     asset[[nm]] <- extras[[nm]]
   }
-  asset
+  .as_doc_asset(asset)
 }
 
 #' @rdname item_functions
@@ -160,8 +160,8 @@ stac_add_items <- function(collection, ..., root_dir = ".") {
     item <- .as_rstac(item)
     stac_save(item, root_dir = root_dir)
 
-    collection$links <- .add_link(
-      collection$links,
+    collection <- stac_add_link(
+      collection,
       "item",
       glue::glue("items/{item$id}/item.json"),
       title = item$id
@@ -172,11 +172,40 @@ stac_add_items <- function(collection, ..., root_dir = ".") {
     collection <- .propagate_thumbnail(collection, item)
   }
 
-  collection <- .as_rstac(collection)
   stac_save(collection, root_dir = root_dir)
 
   message(glue::glue("Added {length(items)} item(s) to collection {col_id}."))
   invisible(collection)
+}
+
+#' @title Add an asset to a STAC document
+#'
+#' @name stac_add_asset
+#'
+#' @description
+#' Pure builder that attaches an asset to a STAC `Item` or `Collection`.
+#' Assets set at creation time via [new_item()] can be complemented or
+#' overwritten later with this function. No disk I/O is performed.
+#'
+#' @param doc   A STAC document (`doc_item` or `doc_collection`).
+#' @param key   A `character` name for the asset in the document's `assets`
+#'   map.
+#' @param asset A `list` describing the asset, as from [new_asset()].
+#'
+#' @return The updated STAC document, with `asset` stored under
+#'   `doc$assets[[key]]` and the appropriate class preserved.
+#'
+#' @examples
+#' item <- new_item("i", bbox = c(0, 0, 1, 1))
+#' item <- stac_add_asset(item, "data", new_asset("data.tif"))
+#'
+#' @export
+stac_add_asset <- function(doc, key, asset) {
+  if (is.null(doc$assets)) {
+    doc$assets <- list()
+  }
+  doc$assets[[key]] <- asset
+  .as_rstac(doc)
 }
 
 #' Update a collection spatial extent with an item bbox

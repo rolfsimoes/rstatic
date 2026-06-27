@@ -33,7 +33,8 @@
 #' @return
 #' \itemize{
 #'   \item `new_collection()`: a `doc_collection` object.
-#'   \item `stac_add_collection()`: invisibly, the saved `doc_collection`.
+#'   \item `stac_add_collection()`: invisibly, the updated `doc_catalog`
+#'     (the parent), so it can be chained with another call.
 #' }
 #'
 #' @examples
@@ -46,7 +47,7 @@
 #'
 #' dir <- tempfile("stac-")
 #' cat <- stac_init("cat", "Catalog", "Example", root_dir = dir)
-#' stac_add_collection(cat, collection = col, root_dir = dir)
+#' cat <- stac_add_collection(cat, collection = col, root_dir = dir)
 NULL
 
 #' @rdname collection_functions
@@ -101,15 +102,14 @@ stac_add_collection <- function(catalog,
 
   stac_save(collection, root_dir = root_dir)
 
-  catalog$links <- .add_link(
-    catalog$links,
+  catalog <- stac_add_link(
+    catalog,
     "child",
     glue::glue("collections/{collection$id}/collection.json"),
     title = collection$title
   )
-  catalog <- .as_rstac(catalog)
   stac_save(catalog, root_dir = root_dir)
 
   message(glue::glue("Collection {collection$id} added to Catalog."))
-  invisible(collection)
+  invisible(catalog)
 }

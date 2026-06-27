@@ -115,6 +115,10 @@
 
 #' Assign rstatic/rstac document classes to a STAC object
 #'
+#' Classes are assigned to the parent document *and* to its child documents
+#' (each `link` and each `asset`), so that S3 dispatch (e.g. `print()`) works
+#' on nested elements such as `doc$links` or `doc$assets[[key]]`.
+#'
 #' @param x A STAC object (`list`) with a `type` key.
 #'
 #' @return The object `x` with appropriate S3 classes assigned.
@@ -126,7 +130,10 @@
     return(NULL)
   }
   if (!is.null(x$links)) {
-    class(x$links) <- c("doc_links", "list")
+    x$links <- .as_doc_links(x$links)
+  }
+  if (!is.null(x$assets)) {
+    x$assets <- lapply(x$assets, .as_doc_asset)
   }
   type <- x$type
   if (is.null(type)) {
@@ -142,5 +149,36 @@
   if (!is.null(doc_class)) {
     class(x) <- c(doc_class, "rstac_doc", "list")
   }
+  x
+}
+
+#' Class a single link as a `doc_link`
+#'
+#' @keywords internal
+#' @noRd
+.as_doc_link <- function(x) {
+  class(x) <- c("doc_link", "list")
+  x
+}
+
+#' Class a list of links as `doc_links`, classing each element as `doc_link`
+#'
+#' @keywords internal
+#' @noRd
+.as_doc_links <- function(x) {
+  if (is.null(x)) {
+    return(NULL)
+  }
+  x <- lapply(x, .as_doc_link)
+  class(x) <- c("doc_links", "list")
+  x
+}
+
+#' Class a single asset as a `doc_asset`
+#'
+#' @keywords internal
+#' @noRd
+.as_doc_asset <- function(x) {
+  class(x) <- c("doc_asset", "list")
   x
 }

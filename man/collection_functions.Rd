@@ -50,7 +50,8 @@ written. Defaults to the current working directory.}
 \value{
 \itemize{
 \item \code{new_collection()}: a \code{doc_collection} object.
-\item \code{stac_add_collection()}: invisibly, the saved \code{doc_collection}.
+\item \code{stac_add_collection()}: invisibly, the updated \code{doc_catalog}
+(the parent), so it can be chained with another call.
 }
 }
 \description{
@@ -72,5 +73,5 @@ col$type
 
 dir <- tempfile("stac-")
 cat <- stac_init("cat", "Catalog", "Example", root_dir = dir)
-stac_add_collection(cat, collection = col, root_dir = dir)
+cat <- stac_add_collection(cat, collection = col, root_dir = dir)
 }

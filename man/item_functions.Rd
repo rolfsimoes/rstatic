@@ -76,7 +76,7 @@ written. Defaults to the current working directory.}
 \value{
 \itemize{
 \item \code{new_properties()}: a \code{list} of properties.
-\item \code{new_asset()}: a \code{list} describing an asset.
+\item \code{new_asset()}: a \code{doc_asset} object describing an asset.
 \item \code{new_item()}: a \code{doc_item} object.
 \item \code{stac_add_items()}: invisibly, the updated \code{doc_collection}.
 }

@@ -151,6 +151,7 @@ thumb <- new_thumbnail(
   item_id = "land-cover-2020",
   asset_href = system.file("extdata/example.tif", package = "rstatic"),
   width = 200,
+  style = style,
   root_dir = root
 )
 plot(thumb)

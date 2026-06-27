@@ -1,6 +1,6 @@
 Package: rstatic
 Title: Primitives to Generate Static SpatioTemporal Asset Catalogs
-Version: 0.0.0.9000
+Version: 0.1.0.9000
 Authors@R: 
     c(person("Rolf", "Simoes",
              email = "rolfsimoes@gmail.com",

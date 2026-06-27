@@ -34,12 +34,9 @@ test_that("stac_init preserves existing child links", {
 
 test_that("stac_add_items updates extent and links", {
   dir <- withr::local_tempdir()
+  col <- new_collection("col", "Collection", "Desc")
   cat <- stac_init("cat", "Catalog", "Desc", root_dir = dir)
-  col <- stac_add_collection(
-    cat,
-    collection = new_collection("col", "Collection", "Desc"),
-    root_dir = dir
-  )
+  cat <- stac_add_collection(cat, collection = col, root_dir = dir)
 
   item1 <- new_item(
     "i1", bbox = c(-50, -10, -49, -9),

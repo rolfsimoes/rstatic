@@ -61,18 +61,15 @@ catalog <- stac_init(
   description = "A minimal static STAC catalog",
   root_dir = root
 )
-#> Catalog example initialized/updated at /tmp/RtmpMajh8n/stac-2dcc367caca80/stac/catalog.json
+#> Catalog example initialized/updated at /tmp/RtmpGSJL3d/stac-40dac6ac2aaab/stac/catalog.json
 
 # 2. Add a collection
-collection <- stac_add_collection(
-  catalog,
-  collection = new_collection(
-    id = "land-cover",
-    title = "Land Cover",
-    description = "Example land cover collection"
-  ),
-  root_dir = root
+collection <- new_collection(
+  id = "land-cover",
+  title = "Land Cover",
+  description = "Example land cover collection"
 )
+catalog <- stac_add_collection(catalog, collection = collection, root_dir = root)
 #> Collection land-cover added to Catalog.
 
 # 3. Build and add an item
@@ -105,7 +102,8 @@ list.files(file.path(root, "stac"), recursive = TRUE)
 | `new_catalog()` / `stac_init()` | Create / write a root catalog |
 | `new_collection()` / `stac_add_collection()` | Create / register a collection |
 | `new_item()`, `new_properties()`, `new_asset()` | Build items, properties and assets |
-| `stac_add_items()` | Persist items and update collection extent |
+| `stac_add_collection()` / `stac_add_items()` | Register collections/items and return the parent |
+| `stac_add_link()` / `stac_add_asset()` | Pure builders for links and assets |
 | `stac_save()` | Write any document to its canonical path |
 | `extract_bbox()` / `as_geometry()` | Spatial metadata helpers |
 | `stac_style()` / `qml_to_style()` | Thumbnail style objects |

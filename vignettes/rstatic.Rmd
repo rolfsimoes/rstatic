@@ -64,21 +64,18 @@ catalog
 ## 2. Create and register a collection
 
 Collections group related items. `new_collection()` builds the document in
-memory and `stac_add_collection()` persists it and links it to the catalog.
-Any extra named arguments (e.g. `citation`, `doi`) are stored as additional
-collection fields.
+memory and `stac_add_collection()` persists it, links it to the catalog, and
+returns the updated catalog. Any extra named arguments (e.g. `citation`, `doi`)
+are stored as additional collection fields.
 
 ```{r collection}
-collection <- stac_add_collection(
-  catalog,
-  collection = new_collection(
-    id = "land-cover",
-    title = "Example Land Cover",
-    description = "Annual land cover maps (example data)",
-    license = "CC-BY-4.0"
-  ),
-  root_dir = root
+collection <- new_collection(
+  id = "land-cover",
+  title = "Example Land Cover",
+  description = "Annual land cover maps (example data)",
+  license = "CC-BY-4.0"
 )
+catalog <- stac_add_collection(catalog, collection = collection, root_dir = root)
 collection
 ```
 
@@ -148,7 +145,7 @@ style <- stac_style(min = 0, max = 255, palette = c("black", "white"))
 style$type
 ```
 
-```{r thumbnail, eval = has_terra}
+```{r thumbnail, eval = has_terra, fig.cap = "Rendered thumbnail for the land-cover-2020 item."}
 thumb <- new_thumbnail(
   collection_id = "land-cover",
   item_id = "land-cover-2020",
@@ -156,7 +153,7 @@ thumb <- new_thumbnail(
   width = 200,
   root_dir = root
 )
-thumb$roles
+plot(thumb)
 ```
 
 ## Resulting catalog

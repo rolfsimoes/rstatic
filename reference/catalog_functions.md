@@ -67,5 +67,5 @@ stac_init(
   description = "An example STAC catalog",
   root_dir = dir
 )
-#> Catalog my-catalog initialized/updated at /tmp/RtmpRxJO8Z/stac-1c405fbcd425/stac/catalog.json
+#> Catalog my-catalog initialized/updated at /tmp/RtmpHpTfbU/stac-1cc59a89860/stac/catalog.json
 ```

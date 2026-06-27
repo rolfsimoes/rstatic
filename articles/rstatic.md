@@ -45,7 +45,7 @@ catalog <- stac_init(
   description = "An example static STAC catalog built with rstatic",
   root_dir = root
 )
-#> Catalog restore-plus initialized/updated at /tmp/Rtmp4Pc8u9/stac-1db56f0ef15f/stac/catalog.json
+#> Catalog restore-plus initialized/updated at /tmp/RtmpJwPN4D/stac-1e3d437ea46a/stac/catalog.json
 catalog
 #> # STAC Catalog restore-plus
 #>   title        Restore+ Catalog
@@ -187,6 +187,7 @@ thumb <- new_thumbnail(
   item_id = "land-cover-2020",
   asset_href = system.file("extdata/example.tif", package = "rstatic"),
   width = 200,
+  style = style,
   root_dir = root
 )
 plot(thumb)

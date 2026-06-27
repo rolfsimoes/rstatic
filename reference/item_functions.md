@@ -141,7 +141,7 @@ item$type
 
 dir <- tempfile("stac-")
 cat <- stac_init("cat", "Catalog", "Example", root_dir = dir)
-#> Catalog cat initialized/updated at /tmp/RtmpRxJO8Z/stac-1c401852e06/stac/catalog.json
+#> Catalog cat initialized/updated at /tmp/RtmpHpTfbU/stac-1cc53b2518a4/stac/catalog.json
 col <- stac_add_collection(
   cat,
   collection = new_collection("col", "Collection", "Example"),

@@ -128,5 +128,7 @@ new_thumbnail <- function(collection_id,
 
   do.call(terra::plot, plot_args)
 
-  new_asset("thumbnail.png", title = title, roles = list("thumbnail"))
+  asset <- new_asset("thumbnail.png", title = title, roles = list("thumbnail"))
+  attr(asset, "local_path") <- output_path
+  asset
 }

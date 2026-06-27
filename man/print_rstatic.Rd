@@ -5,6 +5,9 @@
 \alias{print.doc_catalog}
 \alias{print.doc_collection}
 \alias{print.doc_item}
+\alias{print.doc_asset}
+\alias{print.doc_link}
+\alias{print.doc_links}
 \title{Print STAC documents}
 \usage{
 \method{print}{doc_catalog}(x, ...)
@@ -12,19 +15,33 @@
 \method{print}{doc_collection}(x, ...)
 
 \method{print}{doc_item}(x, ...)
+
+\method{print}{doc_asset}(x, ...)
+
+\method{print}{doc_link}(x, ...)
+
+\method{print}{doc_links}(x, n = 10, ...)
 }
 \arguments{
-\item{x}{A \code{doc_catalog}, \code{doc_collection}, or \code{doc_item} object.}
+\item{x}{A STAC document or element: \code{doc_catalog}, \code{doc_collection},
+\code{doc_item}, \code{doc_asset}, \code{doc_link}, or \code{doc_links}.}
 
 \item{...}{Additional arguments (currently ignored).}
+
+\item{n}{Maximum number of entries to print for \code{doc_links}. Defaults to
+\code{10}.}
 }
 \value{
 Invisibly, \code{x}.
 }
 \description{
-Compact S3 print methods for rstatic STAC documents.
+Minimalist, \code{tibble}-inspired S3 print methods for rstatic STAC documents
+and their child elements (\code{doc_link}, \code{doc_links}, and \code{doc_asset}). Output
+is lightly styled with the \pkg{cli} package and degrades gracefully when a
+terminal does not support colors.
 }
 \examples{
 print(new_catalog("c", "Catalog", "An example catalog"))
 print(new_collection("col", "Collection", "An example collection"))
+print(new_asset("data.tif", title = "Data"))
 }

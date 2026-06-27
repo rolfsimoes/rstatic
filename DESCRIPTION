@@ -29,13 +29,17 @@ RoxygenNote: 8.0.0
 Depends:
     R (>= 3.5)
 Imports:
+    cli,
     glue,
     grDevices,
     graphics,
     jsonlite,
-    tools
+    tools,
+    utils
 Suggests:
+    jpeg,
     knitr,
+    png,
     rmarkdown,
     terra,
     testthat (>= 3.0.0),

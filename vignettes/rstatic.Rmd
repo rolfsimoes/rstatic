@@ -136,16 +136,38 @@ collection$extent$temporal$interval[[1]]
 
 ## 6. Thumbnails and styles (optional)
 
-With `terra`, `new_thumbnail()` renders a PNG preview. Styles can be built
-explicitly with `stac_style()` or parsed from a QGIS `.qml` file with
-`qml_to_style()` (requires `xml2`).
+With `terra`, `new_thumbnail()` renders a PNG preview. A `stac_style()` object
+describes how raster values map to thumbnail pixels: it does not render the
+image, it only validates and normalizes the rendering intent.
+
+The raster shipped with the package (`example.tif`) is a single Landsat
+surface-reflectance band (`B04`) with values roughly in the `[0, 0.5]` range.
+A continuous grayscale style stretches those values between black and white:
 
 ```{r style}
-style <- stac_style(min = 0, max = 255, palette = c("black", "white"))
-style$type
+style <- stac_style(min = 0, max = 0.5, palette = c("black", "white"))
+style
 ```
 
-```{r thumbnail, eval = has_terra, fig.cap = "Rendered thumbnail for the land-cover-2020 item."}
+The style kind is inferred from the parameters rather than chosen explicitly.
+Supplying `values` and `colors` instead produces a categorical style, suitable
+for a land-cover map where each integer class has its own color:
+
+```{r style-categorical}
+land_cover_style <- stac_style(
+  values = c(1, 2, 3, 100, 101, 102),
+  colors = c("#c14d00", "#367906", "#7cc900", "#f00060", "#4cdcc7", "#cbba6b"),
+  labels = c("Annual crop", "Cerradão", "Cerrado", "Urban",
+             "Silviculture", "Natural non-vegetated"),
+  nodata = 0
+)
+land_cover_style
+```
+
+`new_thumbnail()` applies the style with `terra` to write the PNG. Here we
+render the Landsat band with the grayscale style:
+
+```{r thumbnail, eval = has_terra, fig.cap = "Grayscale thumbnail of the Landsat B04 band."}
 thumb <- new_thumbnail(
   collection_id = "land-cover",
   item_id = "land-cover-2020",
@@ -155,6 +177,28 @@ thumb <- new_thumbnail(
   root_dir = root
 )
 plot(thumb)
+```
+
+`qml_to_style()` reads a supported QGIS `.qml` raster style and returns the
+same kind of object as `stac_style()` (it requires `xml2`). The bundled
+`example.qml` is a single-band pseudocolor style, which becomes a continuous
+style with a color ramp:
+
+```{r qml-style, eval = requireNamespace("xml2", quietly = TRUE)}
+qml_style <- qml_to_style(system.file("extdata/example.qml", package = "rstatic"))
+qml_style
+```
+
+```{r thumbnail-qml, eval = has_terra && requireNamespace("xml2", quietly = TRUE), fig.cap = "Thumbnail rendered from a QML style."}
+thumb_qml <- new_thumbnail(
+  collection_id = "land-cover",
+  item_id = "land-cover-2020-qml",
+  asset_href = system.file("extdata/example.tif", package = "rstatic"),
+  width = 200,
+  style = qml_style,
+  root_dir = root
+)
+plot(thumb_qml)
 ```
 
 ## Resulting catalog

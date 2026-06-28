@@ -35,4 +35,5 @@ reference:
 - title: Printing
   contents:
   - print.doc_catalog
+  - print.rstatic_style
 

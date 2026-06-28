@@ -27,13 +27,14 @@ new_thumbnail(
 
 \item{title}{A \code{character} asset title. Defaults to \code{"Thumbnail"}.}
 
-\item{style}{An optional style \code{list} from \code{\link[=stac_style]{stac_style()}} or
-\code{\link[=qml_to_style]{qml_to_style()}}.}
+\item{style}{An optional \code{rstatic_style} object from \code{\link[=stac_style]{stac_style()}}
+or \code{\link[=qml_to_style]{qml_to_style()}}.}
 
 \item{root_dir}{A \code{character} directory under which the thumbnail is
 written. Defaults to the current working directory.}
 
-\item{...}{Additional arguments passed to \code{\link[terra:plot]{terra::plot()}}.}
+\item{...}{Additional arguments passed to the underlying \code{terra}
+plotting function.}
 }
 \value{
 A \code{list} describing the thumbnail asset (as from \code{\link[=new_asset]{new_asset()}}).
@@ -42,6 +43,10 @@ A \code{list} describing the thumbnail asset (as from \code{\link[=new_asset]{ne
 Renders a PNG thumbnail from a raster and returns a STAC \code{Asset} pointing to
 it. The thumbnail is written under the canonical item directory
 \code{stac/collections/{collection_id}/items/{item_id}/thumbnail.png}.
+
+The optional \code{style} argument controls how raster values are mapped to
+pixels. Build it with \code{\link[=stac_style]{stac_style()}} or \code{\link[=qml_to_style]{qml_to_style()}}. Without a style,
+the raster is rendered with \code{terra}'s default settings.
 
 This function requires the optional \pkg{terra} package. If \pkg{terra} is
 not installed, build the thumbnail asset manually with \code{\link[=new_asset]{new_asset()}}.
@@ -55,6 +60,7 @@ if (requireNamespace("terra", quietly = TRUE)) {
       collection_id = "col",
       item_id = "item-1",
       asset_href = f,
+      style = stac_style(min = 0, max = 0.5, palette = c("black", "white")),
       root_dir = dir
     )
   }

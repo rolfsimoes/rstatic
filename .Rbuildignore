@@ -6,3 +6,7 @@
 ^docs$
 ^pkgdown$
 ^\.github$
+^doc$
+^Meta$
+^AGENTS\.md$
+^CLAUDE\.md$

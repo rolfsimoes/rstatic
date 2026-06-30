@@ -70,6 +70,26 @@
   c(links, list(new_link))
 }
 
+#' Resolve the readable raster source of an asset
+#'
+#' Returns the asset's resolved `local_path` attribute when present (set by
+#' [update_root()]), otherwise its `href`. Used by the `doc_asset` methods of
+#' [extract_bbox()] and [new_thumbnail()] to locate the raster to read.
+#'
+#' @param asset A `doc_asset` object.
+#'
+#' @return A `character` path or URL.
+#'
+#' @keywords internal
+#' @noRd
+.asset_source <- function(asset) {
+  source <- attr(asset, "local_path")
+  if (is.null(source) || !nzchar(source)) {
+    source <- asset$href
+  }
+  source
+}
+
 #' Deduce a media (MIME) type from a file extension
 #'
 #' @param url A file path or URL.

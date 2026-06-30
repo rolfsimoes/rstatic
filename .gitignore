@@ -5,3 +5,4 @@ docs
 /Meta/
 .Rhistory
 pkgdown/
+tests/testthat/Rplots.pdf

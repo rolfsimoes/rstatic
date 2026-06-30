@@ -33,6 +33,7 @@ reference:
   - qml_to_style
   - new_thumbnail
   - plot_rstatic
+  - update_root
 - title: Printing
   contents:
   - print.doc_catalog

@@ -27,7 +27,8 @@ with \code{\link[=stac_style]{stac_style()}}.
 }
 \examples{
 if (requireNamespace("xml2", quietly = TRUE)) {
-  qml <- system.file("extdata/example.qml", package = "rstatic")
+  qml <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.qml",
+                      package = "rstatic")
   if (nzchar(qml)) {
     qml_to_style(qml)
   }

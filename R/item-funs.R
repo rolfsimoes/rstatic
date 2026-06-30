@@ -3,14 +3,16 @@
 #' @name item_functions
 #'
 #' @description
-#' Functions to build the building blocks of a STAC `Item`.
+#' Pure builders for the building blocks of a STAC `Item`. None touch disk; use
+#' [stac_save()] to persist.
 #'
 #' \itemize{
 #'   \item `new_properties()`: assembles an item `properties` list.
 #'   \item `new_asset()`: creates a single STAC `Asset`.
 #'   \item `new_item()`: creates an in-memory `Item` (a GeoJSON `Feature`).
-#'   \item `stac_add_items()`: persists one or more items into a collection,
-#'     updating the collection links and spatio-temporal extent.
+#'   \item `add_items()`: links one or more items into a collection, updating
+#'     the collection links and spatio-temporal extent, and returns the
+#'     collection.
 #' }
 #'
 #' @param description    A `character` description.
@@ -31,8 +33,8 @@
 #' @param assets         A named `list` of assets, e.g. from `new_asset()`.
 #' @param stac_version   A `character` STAC version. Defaults to `"1.0.0"`.
 #' @param collection     A `doc_collection` object to add items to.
-#' @param root_dir       A `character` directory under which documents are
-#'   written. Defaults to the current working directory.
+#' @param items          A single `doc_item`, or a `list` of `doc_item`
+#'   objects, to link into the collection.
 #' @param ...            Additional named fields. See details for each
 #'   function.
 #'
@@ -41,7 +43,7 @@
 #'   \item `new_properties()`: a `list` of properties.
 #'   \item `new_asset()`: a `doc_asset` object describing an asset.
 #'   \item `new_item()`: a `doc_item` object.
-#'   \item `stac_add_items()`: invisibly, the updated `doc_collection`.
+#'   \item `add_items()`: the updated `doc_collection`.
 #' }
 #'
 #' @examples
@@ -55,14 +57,9 @@
 #' )
 #' item$type
 #'
-#' dir <- tempfile("stac-")
-#' cat <- stac_init("cat", "Catalog", "Example", root_dir = dir)
-#' col <- stac_add_collection(
-#'   cat,
-#'   collection = new_collection("col", "Collection", "Example"),
-#'   root_dir = dir
-#' )
-#' stac_add_items(col, item, root_dir = dir)
+#' col <- new_collection("col", "Collection", "Example")
+#' col <- add_items(col, item)
+#' col$extent$spatial$bbox[[1]]
 NULL
 
 #' @rdname item_functions
@@ -147,20 +144,24 @@ new_item <- function(id,
 
 #' @rdname item_functions
 #' @export
-stac_add_items <- function(collection, ..., root_dir = ".") {
-  items <- list(...)
+add_items <- function(collection, items) {
+  if (!inherits(collection, "doc_collection")) {
+    stop("`collection` must be a `doc_collection` object from ",
+         "`new_collection()`.", call. = FALSE)
+  }
+  if (inherits(items, "doc_item")) {
+    items <- list(items)
+  }
   if (length(items) == 0) {
-    return(invisible(collection))
+    return(collection)
+  }
+  if (!all(vapply(items, inherits, logical(1), "doc_item"))) {
+    stop("`items` must be a `doc_item` object, or a list of `doc_item` ",
+         "objects, from `new_item()`.", call. = FALSE)
   }
 
-  col_id <- collection$id
-
   for (item in items) {
-    item$collection <- col_id
-    item <- .as_rstac(item)
-    stac_save(item, root_dir = root_dir)
-
-    collection <- stac_add_link(
+    collection <- add_link(
       collection,
       "item",
       glue::glue("items/{item$id}/item.json"),
@@ -172,15 +173,12 @@ stac_add_items <- function(collection, ..., root_dir = ".") {
     collection <- .propagate_thumbnail(collection, item)
   }
 
-  stac_save(collection, root_dir = root_dir)
-
-  message(glue::glue("Added {length(items)} item(s) to collection {col_id}."))
-  invisible(collection)
+  collection
 }
 
 #' @title Add an asset to a STAC document
 #'
-#' @name stac_add_asset
+#' @name add_asset
 #'
 #' @description
 #' Pure builder that attaches an asset to a STAC `Item` or `Collection`.
@@ -197,10 +195,21 @@ stac_add_items <- function(collection, ..., root_dir = ".") {
 #'
 #' @examples
 #' item <- new_item("i", bbox = c(0, 0, 1, 1))
-#' item <- stac_add_asset(item, "data", new_asset("data.tif"))
+#' item <- add_asset(item, "data", new_asset("data.tif"))
 #'
 #' @export
-stac_add_asset <- function(doc, key, asset) {
+add_asset <- function(doc, key, asset) {
+  if (!inherits(doc, "doc_item") && !inherits(doc, "doc_collection")) {
+    stop("`doc` must be a `doc_item` or `doc_collection` object.",
+         call. = FALSE)
+  }
+  if (!is.character(key) || length(key) != 1L) {
+    stop("`key` must be a single character string.", call. = FALSE)
+  }
+  if (!inherits(asset, "doc_asset")) {
+    stop("`asset` must be a `doc_asset` object from `new_asset()`.",
+         call. = FALSE)
+  }
   if (is.null(doc$assets)) {
     doc$assets <- list()
   }

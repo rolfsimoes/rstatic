@@ -1,14 +1,15 @@
-#' @title Create and register STAC collections
+#' @title Create and attach STAC collections
 #'
 #' @name collection_functions
 #'
 #' @description
-#' Functions to build and attach a STAC `Collection` document.
+#' Pure builders for a STAC `Collection` document. Neither function touches
+#' disk; use [stac_save()] to persist.
 #'
 #' \itemize{
 #'   \item `new_collection()`: creates an in-memory `Collection` object.
-#'   \item `stac_add_collection()`: persists a collection and registers it as
-#'     a `child` of a catalog, then saves the updated catalog.
+#'   \item `add_collection()`: registers a collection as a `child` of a catalog
+#'     and returns the updated catalog.
 #' }
 #'
 #' @param id           A `character` identifier for the collection.
@@ -18,23 +19,18 @@
 #'   Defaults to `"proprietary"`.
 #' @param extent       A `list` with the collection `spatial` and `temporal`
 #'   extent. If `NULL`, an empty extent is created and later updated by
-#'   [stac_add_items()].
+#'   [add_items()].
 #' @param stac_version A `character` STAC specification version.
 #'   Defaults to `"1.0.0"`.
 #' @param catalog      A `doc_catalog` object the collection is attached to.
-#' @param collection   A `doc_collection` object to register. If `NULL`, one is
-#'   created from `...`.
-#' @param root_dir     A `character` directory under which documents are
-#'   written. Defaults to the current working directory.
-#' @param ...          Additional named fields. For `new_collection()`, these
-#'   are added to the collection document. For `stac_add_collection()`, these
-#'   are passed to `new_collection()` when `collection` is `NULL`.
+#' @param collection   A `doc_collection` object to register.
+#' @param ...          Additional named fields added to the collection document.
 #'
 #' @return
 #' \itemize{
 #'   \item `new_collection()`: a `doc_collection` object.
-#'   \item `stac_add_collection()`: invisibly, the updated `doc_catalog`
-#'     (the parent), so it can be chained with another call.
+#'   \item `add_collection()`: the updated `doc_catalog` (the parent), so it can
+#'     be chained with another call.
 #' }
 #'
 #' @examples
@@ -45,9 +41,8 @@
 #' )
 #' col$type
 #'
-#' dir <- tempfile("stac-")
-#' cat <- stac_init("cat", "Catalog", "Example", root_dir = dir)
-#' cat <- stac_add_collection(cat, collection = col, root_dir = dir)
+#' cat <- new_catalog("cat", "Catalog", "Example")
+#' cat <- add_collection(cat, col)
 NULL
 
 #' @rdname collection_functions
@@ -92,24 +87,20 @@ new_collection <- function(id,
 
 #' @rdname collection_functions
 #' @export
-stac_add_collection <- function(catalog,
-                                collection = NULL,
-                                ...,
-                                root_dir = ".") {
-  if (is.null(collection)) {
-    collection <- new_collection(...)
+add_collection <- function(catalog, collection) {
+  if (!inherits(catalog, "doc_catalog")) {
+    stop("`catalog` must be a `doc_catalog` object from `new_catalog()`.",
+         call. = FALSE)
+  }
+  if (!inherits(collection, "doc_collection")) {
+    stop("`collection` must be a `doc_collection` object from ",
+         "`new_collection()`.", call. = FALSE)
   }
 
-  stac_save(collection, root_dir = root_dir)
-
-  catalog <- stac_add_link(
+  add_link(
     catalog,
     "child",
     glue::glue("collections/{collection$id}/collection.json"),
     title = collection$title
   )
-  stac_save(catalog, root_dir = root_dir)
-
-  message(glue::glue("Collection {collection$id} added to Catalog."))
-  invisible(catalog)
 }

@@ -1,6 +1,6 @@
 Package: rstatic
 Title: Primitives to Generate Static SpatioTemporal Asset Catalogs
-Version: 0.1.0.9000
+Version: 0.2.0.9000
 Authors@R: 
     c(person("Rolf", "Simoes",
              email = "rolfsimoes@gmail.com",
@@ -21,7 +21,7 @@ Description: Provides reusable primitives to build and serialize static
     rendering are supported through 'terra', and 'QGIS' style parsing
     through 'xml2', when these packages are available.
 License: GPL (>= 3)
-URL: https://github.com/rolfsimoes/rstatic
+URL: https://github.com/rolfsimoes/rstatic, https://rolfsimoes.github.io/rstatic
 BugReports: https://github.com/rolfsimoes/rstatic/issues
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

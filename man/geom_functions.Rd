@@ -48,7 +48,7 @@ as_geometry(bbox)
 
 # extract_bbox() requires terra
 if (requireNamespace("terra", quietly = TRUE)) {
-  f <- system.file("extdata/example.tif", package = "rstatic")
+  f <- system.file("extdata/S2_20LMR_B04_20220630.tif", package = "rstatic")
   if (nzchar(f)) {
     extract_bbox(f)
   }

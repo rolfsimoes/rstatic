@@ -6,12 +6,15 @@
 \alias{rstatic-package}
 \title{rstatic: Primitives to Generate Static SpatioTemporal Asset Catalogs}
 \description{
+\if{html}{\figure{logo.png}{options: style='float: right' alt='logo' width='120'}}
+
 Provides reusable primitives to build and serialize static SpatioTemporal Asset Catalog (STAC) documents, including catalogs, collections, items, assets, and links. The package implements the STAC specification version 1.0.0 (\url{https://github.com/radiantearth/stac-spec}) and is intended as a foundation for other tools, such as STAC generators and experiment catalog builders. Optional spatial metadata extraction and thumbnail rendering are supported through 'terra', and 'QGIS' style parsing through 'xml2', when these packages are available.
 }
 \seealso{
 Useful links:
 \itemize{
   \item \url{https://github.com/rolfsimoes/rstatic}
+  \item \url{https://rolfsimoes.github.io/rstatic}
   \item Report bugs at \url{https://github.com/rolfsimoes/rstatic/issues}
 }
 

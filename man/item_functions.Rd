@@ -5,7 +5,7 @@
 \alias{new_properties}
 \alias{new_asset}
 \alias{new_item}
-\alias{stac_add_items}
+\alias{add_items}
 \title{Create STAC items, properties, and assets}
 \usage{
 new_properties(
@@ -30,7 +30,7 @@ new_item(
   ...
 )
 
-stac_add_items(collection, ..., root_dir = ".")
+add_items(collection, items)
 }
 \arguments{
 \item{description}{A \code{character} description.}
@@ -70,26 +70,28 @@ from \code{bbox} via \code{\link[=as_geometry]{as_geometry()}}.}
 
 \item{collection}{A \code{doc_collection} object to add items to.}
 
-\item{root_dir}{A \code{character} directory under which documents are
-written. Defaults to the current working directory.}
+\item{items}{A single \code{doc_item}, or a \code{list} of \code{doc_item}
+objects, to link into the collection.}
 }
 \value{
 \itemize{
 \item \code{new_properties()}: a \code{list} of properties.
 \item \code{new_asset()}: a \code{doc_asset} object describing an asset.
 \item \code{new_item()}: a \code{doc_item} object.
-\item \code{stac_add_items()}: invisibly, the updated \code{doc_collection}.
+\item \code{add_items()}: the updated \code{doc_collection}.
 }
 }
 \description{
-Functions to build the building blocks of a STAC \code{Item}.
+Pure builders for the building blocks of a STAC \code{Item}. None touch disk; use
+\code{\link[=stac_save]{stac_save()}} to persist.
 
 \itemize{
 \item \code{new_properties()}: assembles an item \code{properties} list.
 \item \code{new_asset()}: creates a single STAC \code{Asset}.
 \item \code{new_item()}: creates an in-memory \code{Item} (a GeoJSON \code{Feature}).
-\item \code{stac_add_items()}: persists one or more items into a collection,
-updating the collection links and spatio-temporal extent.
+\item \code{add_items()}: links one or more items into a collection, updating
+the collection links and spatio-temporal extent, and returns the
+collection.
 }
 }
 \examples{
@@ -103,12 +105,7 @@ item <- new_item(
 )
 item$type
 
-dir <- tempfile("stac-")
-cat <- stac_init("cat", "Catalog", "Example", root_dir = dir)
-col <- stac_add_collection(
-  cat,
-  collection = new_collection("col", "Collection", "Example"),
-  root_dir = dir
-)
-stac_add_items(col, item, root_dir = dir)
+col <- new_collection("col", "Collection", "Example")
+col <- add_items(col, item)
+col$extent$spatial$bbox[[1]]
 }

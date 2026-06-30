@@ -3,8 +3,8 @@
 \name{collection_functions}
 \alias{collection_functions}
 \alias{new_collection}
-\alias{stac_add_collection}
-\title{Create and register STAC collections}
+\alias{add_collection}
+\title{Create and attach STAC collections}
 \usage{
 new_collection(
   id,
@@ -16,7 +16,7 @@ new_collection(
   ...
 )
 
-stac_add_collection(catalog, collection = NULL, ..., root_dir = ".")
+add_collection(catalog, collection)
 }
 \arguments{
 \item{id}{A \code{character} identifier for the collection.}
@@ -30,37 +30,32 @@ Defaults to \code{"proprietary"}.}
 
 \item{extent}{A \code{list} with the collection \code{spatial} and \code{temporal}
 extent. If \code{NULL}, an empty extent is created and later updated by
-\code{\link[=stac_add_items]{stac_add_items()}}.}
+\code{\link[=add_items]{add_items()}}.}
 
 \item{stac_version}{A \code{character} STAC specification version.
 Defaults to \code{"1.0.0"}.}
 
-\item{...}{Additional named fields. For \code{new_collection()}, these
-are added to the collection document. For \code{stac_add_collection()}, these
-are passed to \code{new_collection()} when \code{collection} is \code{NULL}.}
+\item{...}{Additional named fields added to the collection document.}
 
 \item{catalog}{A \code{doc_catalog} object the collection is attached to.}
 
-\item{collection}{A \code{doc_collection} object to register. If \code{NULL}, one is
-created from \code{...}.}
-
-\item{root_dir}{A \code{character} directory under which documents are
-written. Defaults to the current working directory.}
+\item{collection}{A \code{doc_collection} object to register.}
 }
 \value{
 \itemize{
 \item \code{new_collection()}: a \code{doc_collection} object.
-\item \code{stac_add_collection()}: invisibly, the updated \code{doc_catalog}
-(the parent), so it can be chained with another call.
+\item \code{add_collection()}: the updated \code{doc_catalog} (the parent), so it can
+be chained with another call.
 }
 }
 \description{
-Functions to build and attach a STAC \code{Collection} document.
+Pure builders for a STAC \code{Collection} document. Neither function touches
+disk; use \code{\link[=stac_save]{stac_save()}} to persist.
 
 \itemize{
 \item \code{new_collection()}: creates an in-memory \code{Collection} object.
-\item \code{stac_add_collection()}: persists a collection and registers it as
-a \code{child} of a catalog, then saves the updated catalog.
+\item \code{add_collection()}: registers a collection as a \code{child} of a catalog
+and returns the updated catalog.
 }
 }
 \examples{
@@ -71,7 +66,6 @@ col <- new_collection(
 )
 col$type
 
-dir <- tempfile("stac-")
-cat <- stac_init("cat", "Catalog", "Example", root_dir = dir)
-cat <- stac_add_collection(cat, collection = col, root_dir = dir)
+cat <- new_catalog("cat", "Catalog", "Example")
+cat <- add_collection(cat, col)
 }

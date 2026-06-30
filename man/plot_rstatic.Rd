@@ -19,10 +19,11 @@ Invisibly, \code{x}.
 }
 \description{
 Plot visual assets such as thumbnails, quicklooks, or raster previews.
-Supported file formats are \code{png}, \code{jpeg}, and \code{tiff}/\code{tif}. When a thumbnail
-is generated with \code{\link[=new_thumbnail]{new_thumbnail()}}, the full path is stored as an internal
-attribute so that the plot method can locate the file even when the asset's
-\code{href} is relative.
+Supported file formats are \code{png}, \code{jpeg}, and \code{tiff}/\code{tif}. The file is
+resolved from the asset's \code{local_path} attribute when present, otherwise from
+its \code{href}. Set \code{local_path} to point the plot method at a rendered file when
+the asset's \code{href} is relative (for example a thumbnail written under an item
+directory by \code{\link[=stac_save]{stac_save()}}).
 }
 \examples{
 thumb <- new_asset("thumbnail.png", title = "Thumbnail",

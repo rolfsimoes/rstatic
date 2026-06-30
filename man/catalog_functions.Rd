@@ -3,12 +3,9 @@
 \name{catalog_functions}
 \alias{catalog_functions}
 \alias{new_catalog}
-\alias{stac_init}
-\title{Create and initialize STAC catalogs}
+\title{Create STAC catalogs}
 \usage{
 new_catalog(id, title, description, stac_version = "1.0.0", ...)
-
-stac_init(id, title, description, root_dir = ".")
 }
 \arguments{
 \item{id}{A \code{character} identifier for the catalog.}
@@ -21,24 +18,13 @@ stac_init(id, title, description, root_dir = ".")
 Defaults to \code{"1.0.0"}.}
 
 \item{...}{Additional named fields to add to the catalog document.}
-
-\item{root_dir}{A \code{character} directory under which the catalog is
-written. Defaults to the current working directory.}
 }
 \value{
-\itemize{
-\item \code{new_catalog()}: a \code{doc_catalog} object.
-\item \code{stac_init()}: invisibly, the saved \code{doc_catalog} object.
-}
+A \code{doc_catalog} object.
 }
 \description{
-Functions to build a STAC \code{Catalog} document.
-
-\itemize{
-\item \code{new_catalog()}: creates an in-memory \code{Catalog} object.
-\item \code{stac_init()}: creates (or updates) the root catalog on disk under
-a \verb{stac/} directory, preserving any existing child links.
-}
+Pure builder for a STAC \code{Catalog} document. It does not touch disk; use
+\code{\link[=stac_save]{stac_save()}} to persist and \code{\link[=stac_read]{stac_read()}} to load an existing catalog.
 }
 \examples{
 cat <- new_catalog(
@@ -50,10 +36,6 @@ cat$type
 
 # Write a root catalog to a temporary directory
 dir <- tempfile("stac-")
-stac_init(
-  id = "my-catalog",
-  title = "My Catalog",
-  description = "An example STAC catalog",
-  root_dir = dir
-)
+stac_save(catalog = cat, root_dir = dir)
+
 }

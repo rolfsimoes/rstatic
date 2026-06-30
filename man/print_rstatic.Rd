@@ -6,6 +6,7 @@
 \alias{print.doc_collection}
 \alias{print.doc_item}
 \alias{print.doc_asset}
+\alias{print.doc_geometry}
 \alias{print.doc_link}
 \alias{print.doc_links}
 \title{Print STAC documents}
@@ -18,13 +19,15 @@
 
 \method{print}{doc_asset}(x, ...)
 
+\method{print}{doc_geometry}(x, ...)
+
 \method{print}{doc_link}(x, ...)
 
 \method{print}{doc_links}(x, n = 10, ...)
 }
 \arguments{
 \item{x}{A STAC document or element: \code{doc_catalog}, \code{doc_collection},
-\code{doc_item}, \code{doc_asset}, \code{doc_link}, or \code{doc_links}.}
+\code{doc_item}, \code{doc_asset}, \code{doc_link}, \code{doc_links}, or \code{doc_geometry}.}
 
 \item{...}{Additional arguments (currently ignored).}
 

@@ -3,17 +3,23 @@
 \name{geom_functions}
 \alias{geom_functions}
 \alias{extract_bbox}
+\alias{extract_bbox.character}
+\alias{extract_bbox.doc_asset}
 \alias{as_geometry}
 \title{Spatial helpers for STAC documents}
 \usage{
-extract_bbox(url)
+extract_bbox(x)
+
+\method{extract_bbox}{character}(x)
+
+\method{extract_bbox}{doc_asset}(x)
 
 as_geometry(bbox)
 }
 \arguments{
-\item{url}{A \code{character} path or URL to a raster file readable by
-\pkg{terra}. Remote \code{http(s)} URLs are accessed through GDAL's
-\verb{/vsicurl/} driver.}
+\item{x}{A \code{character} path or URL to a raster file readable by
+\pkg{terra}, or a \code{doc_asset} from \code{\link[=new_asset]{new_asset()}}. Remote \code{http(s)} URLs are
+accessed through GDAL's \verb{/vsicurl/} driver.}
 
 \item{bbox}{A numeric vector of length 4 with the bounding box coordinates
 in the order \code{c(xmin, ymin, xmax, ymax)}.}
@@ -32,7 +38,9 @@ Helper functions to derive the spatial metadata required by STAC items.
 \itemize{
 \item \code{extract_bbox()}: reads a raster (local or remote) and returns its
 bounding box in WGS84 (\code{EPSG:4326}). This function requires the optional
-\pkg{terra} package.
+\pkg{terra} package. It is generic: pass either a \code{character} path or URL,
+or a \code{doc_asset} from \code{\link[=new_asset]{new_asset()}}, in which case the raster is read from
+the asset's resolved \code{local_path} (see \code{\link[=update_root]{update_root()}}) or its \code{href}.
 \item \code{as_geometry()}: converts a bounding box into a GeoJSON \code{Polygon}
 geometry. This function has no external dependencies.
 }
@@ -48,9 +56,13 @@ as_geometry(bbox)
 
 # extract_bbox() requires terra
 if (requireNamespace("terra", quietly = TRUE)) {
-  f <- system.file("extdata/S2_20LMR_B04_20220630.tif", package = "rstatic")
+  f <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.tif",
+                    package = "rstatic")
   if (nzchar(f)) {
+    # from a path or URL
     extract_bbox(f)
+    # or directly from an asset
+    extract_bbox(new_asset(f, title = "B04"))
   }
 }
 }

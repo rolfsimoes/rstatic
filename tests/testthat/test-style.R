@@ -88,13 +88,13 @@ test_that("qml_to_style errors clearly when xml2 is missing", {
 
 test_that("qml_to_style converts singlebandpseudocolor to a continuous style", {
   skip_if_not_installed("xml2")
-  qml <- system.file("extdata/example.qml", package = "rstatic")
+  qml <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.qml", package = "rstatic")
   skip_if(!nzchar(qml))
 
   style <- qml_to_style(qml)
   expect_s3_class(style, "rstatic_style_continuous")
-  expect_equal(style$min, 0.012)
-  expect_equal(style$max, 0.296)
+  expect_equal(style$min, 192)
+  expect_equal(style$max, 1371)
   expect_type(style$palette, "character")
   expect_true(length(style$palette) > 0)
   expect_match(style$palette[1], "^#")

@@ -15,11 +15,11 @@ test_that("a saved thumbnail PNG can be plotted via its path", {
   skip_if_not_installed("png")
 
   root <- withr::local_tempdir()
-  f <- system.file("extdata/S2_20LMR_B04_20220630.tif", package = "rstatic")
+  f <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.tif", package = "rstatic")
   skip_if(!nzchar(f))
 
   item <- new_item("item", bbox = c(-50, -10, -49, -9))
-  item <- add_asset(item, "thumbnail", new_thumbnail(asset_href = f,
+  item <- add_asset(item, "thumbnail", new_thumbnail(f,
                                                      width = 20))
   stac_save(collection = new_collection("col", "C", "D"), items = item,
             root_dir = root)

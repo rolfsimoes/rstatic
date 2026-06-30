@@ -2,11 +2,11 @@
 # and return the path to the rendered PNG.
 render_thumb <- function(style, item_id, root, href = NULL) {
   if (is.null(href)) {
-    href <- system.file("extdata/S2_20LMR_B04_20220630.tif", package = "rstatic")
+    href <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.tif", package = "rstatic")
   }
   item <- new_item(item_id, bbox = c(-50, -10, -49, -9))
   item <- add_asset(item, "thumbnail",
-                    new_thumbnail(asset_href = href, width = 40, style = style))
+                    new_thumbnail(href, width = 40, style = style))
   stac_save(collection = new_collection("col", "Collection", "Desc"),
             items = item, root_dir = root)
   file.path(root, "stac", "collections", "col", "items", item_id,
@@ -15,7 +15,7 @@ render_thumb <- function(style, item_id, root, href = NULL) {
 
 test_that("new_thumbnail rejects a non-style object", {
   expect_error(
-    new_thumbnail(asset_href = "x.tif", style = list(min = 0)),
+    new_thumbnail("x.tif", style = list(min = 0)),
     "rstatic_style"
   )
 })
@@ -72,7 +72,7 @@ test_that("stac_save renders a style produced from QML", {
   skip_if_not_installed("terra")
   skip_if_not_installed("xml2")
   root <- withr::local_tempdir()
-  qml <- system.file("extdata/example.qml", package = "rstatic")
+  qml <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.qml", package = "rstatic")
   skip_if(!nzchar(qml))
   expect_true(file.exists(render_thumb(qml_to_style(qml), "qml", root)))
 })

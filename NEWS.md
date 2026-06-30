@@ -1,3 +1,37 @@
+# rstatic 0.3.0.9000
+
+## New features
+
+- Added `update_root()`, which re-points an item's assets at their on-disk locations under a local root directory, following the canonical static catalog layout. It sets each asset's `local_path` attribute so files written by `stac_save()` -- such as a rendered thumbnail -- can be resolved by `plot()` and other local readers. The collection is passed explicitly because an in-memory item does not record which collection owns it.
+- `extract_bbox()` and `new_thumbnail()` are now S3 generics. In addition to a `character` path or URL, both accept a `doc_asset` from `new_asset()`, in which case the raster is read from the asset's resolved `local_path` (see `update_root()`) or its `href`.
+
+## Breaking changes
+
+- The first argument of `new_thumbnail()` was renamed from `asset_href` to `x` to support method dispatch. Calls that named the argument (`new_thumbnail(asset_href = ...)`) must be updated; positional calls are unaffected.
+
+## Documentation
+
+- Reworked the package vignette around the shipped Sentinel-2 example data: a categorical land-cover map and a continuous B04 (red band) preview, each rendered as a thumbnail and linked into the catalog as its own collection. The thumbnails are now plotted by resolving their on-disk path with `update_root()`.
+
+# rstatic 0.2.0.9000
+
+## Breaking changes
+
+- The package was reorganized into a pure functional core and a thin I/O shell. Constructors (`new_*()`) and builders (`add_*()`) no longer touch disk; reading and writing happen only in `stac_read()` and `stac_save()`.
+- The eager `stac_add_*()` helpers were renamed to `add_*()` (`add_collection()`, `add_items()`, `add_asset()`, `add_link()`) and are now pure: each updates an in-memory document and returns it instead of writing to disk. Any link deduplication is scoped within a single `rel`.
+- `stac_init()` was removed. Use `stac_read(path, default = new_catalog(...))` to load an existing catalog, or fall back to a freshly built one, without writing.
+- `stac_save()` is now the only writer and performs a pure overwrite: it persists exactly the documents it is given, with no implicit disk reads or merges. To accumulate state across runs, read the existing document first with `stac_read()`, extend it with the `add_*()` builders, then save. Cross-document links (`self`, `root`, `parent`, and relative hrefs) are synthesized at save time rather than stored in memory.
+
+## New features
+
+- Added `stac_read()`, the package's only reader. It loads a `Catalog`, `Collection`, or `Item` JSON document and returns the corresponding in-memory object, or returns a supplied `default` when the file does not exist -- supporting a load-or-create pattern without ever writing to disk.
+- `new_thumbnail()` is now a pure builder. Instead of rendering immediately, it returns an asset carrying the render intent (source raster, width, and style), which `stac_save()` materializes into a PNG when the owning item is written (requires `terra`).
+
+## Documentation and data
+
+- Replaced the bundled example data with a Sentinel-2 L2A subset over tile `20LMR` (Rondônia, Brazil): a categorical land-cover classification and the B04 (red) band, each with a matching QGIS `.qml` style.
+- Rewrote the vignette and README around the pure-core / I/O-shell workflow and the new example data.
+
 # rstatic 0.1.0.9000
 
 ## Breaking changes

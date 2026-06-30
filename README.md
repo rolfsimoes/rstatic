@@ -1,9 +1,10 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# rstatic <img src="inst/extdata/img/logo.png" align="right" width="120"/>
+# rstatic <img src="man/figures/logo.png" align="right" width="120"/>
 
-Primitives to generate **static** SpatioTemporal Asset Catalogs (STAC).
+Build browsable, server-less **static** SpatioTemporal Asset Catalogs
+(STAC) from R.
 
 <!-- badges: start -->
 
@@ -15,25 +16,30 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 [![STAC](https://img.shields.io/badge/STAC-v1.0.0-informational)](https://github.com/radiantearth/stac-spec)
 <!-- badges: end -->
 
-STAC is a specification of files and web services used to describe
-geospatial information assets. The specification can be consulted at
-<https://stacspec.org/>.
+`rstatic` turns a folder of geospatial assets into a valid
+[STAC](https://stacspec.org/) catalog you can publish anywhere static
+files are served — GitHub Pages, an S3 bucket, or a plain web server. No
+database and no running service are required.
 
-`rstatic` provides small, composable **primitives** to build and
-serialize static STAC documents (catalogs, collections, items, assets,
-and links). It is designed to be a reusable foundation that other
-packages (e.g. STAC generators, experiment catalog builders) can rely
-on. It implements the STAC specification version 1.0.0.
+It does this through small, composable **primitives** for catalogs,
+collections, items, assets, and links. Each one is a pure builder or an
+explicit write to disk, so you stay in control of what gets created and
+where. This makes `rstatic` equally useful on its own and as a
+foundation for higher-level tools such as STAC generators and experiment
+catalog builders. It implements STAC specification version 1.0.0.
 
-Optional features rely on suggested packages and degrade gracefully when
-they are not installed:
+## Features
 
-- **`terra`** — bounding-box extraction (`extract_bbox()`) and thumbnail
-  rendering (`new_thumbnail()`).
-- **`xml2`** — QGIS style parsing (`qml_to_style()`).
+- Build catalogs, collections, items, assets, and links with simple
+  constructor functions.
+- Serialize any document to its canonical static-catalog path on disk.
+- Track spatial and temporal extents automatically as items are added.
+- Optionally extract bounding boxes from rasters, render PNG thumbnail
+  assets, and import QGIS layer styles.
 
-If these packages are unavailable, you can still build documents by
-supplying bounding boxes, geometries, and styles manually.
+The optional helpers activate automatically when their supporting
+packages are installed; otherwise you can still build complete catalogs
+by supplying bounding boxes, geometries, and styles yourself.
 
 ## Installation
 
@@ -54,25 +60,19 @@ library(rstatic)
 
 root <- tempfile("stac-")
 
-# 1. Initialize the root catalog
-catalog <- stac_init(
+# 1. Build the documents in memory (pure -- nothing is written yet)
+catalog <- new_catalog(
   id = "example",
   title = "Example Catalog",
-  description = "A minimal static STAC catalog",
-  root_dir = root
+  description = "A minimal static STAC catalog"
 )
-#> Catalog example initialized/updated at /tmp/RtmpGSJL3d/stac-40dac6ac2aaab/stac/catalog.json
 
-# 2. Add a collection
 collection <- new_collection(
   id = "land-cover",
   title = "Land Cover",
   description = "Example land cover collection"
 )
-catalog <- stac_add_collection(catalog, collection = collection, root_dir = root)
-#> Collection land-cover added to Catalog.
 
-# 3. Build and add an item
 item <- new_item(
   id = "land-cover-2020",
   bbox = c(-50, -10, -49, -9),
@@ -82,11 +82,17 @@ item <- new_item(
   )
 )
 
-collection <- stac_add_items(collection, item, root_dir = root)
-#> Added 1 item(s) to collection land-cover.
+# 2. Link them with the pure add_*() builders
+collection <- add_items(collection, item)
+catalog <- add_collection(catalog, collection)
+
+# 3. Persist -- stac_save() is the only writer
+stac_save(catalog = catalog, collection = collection, items = item,
+          root_dir = root)
 ```
 
-The resulting directory follows the canonical static catalog layout:
+The resulting directory follows the canonical static catalog layout,
+with the collection linking to its item:
 
 ``` r
 list.files(file.path(root, "stac"), recursive = TRUE)
@@ -95,20 +101,46 @@ list.files(file.path(root, "stac"), recursive = TRUE)
 #> [3] "collections/land-cover/items/land-cover-2020/item.json"
 ```
 
+Each file is a self-contained STAC document. To extend a catalog that is
+already on disk, read it back with `stac_read()`, add to it, and save
+again – saving is a pure overwrite, so reading first is what preserves
+the existing children.
+
 ## Core primitives
 
 | Function | Purpose |
 |:---|:---|
-| `new_catalog()` / `stac_init()` | Create / write a root catalog |
-| `new_collection()` / `stac_add_collection()` | Create / register a collection |
+| `new_catalog()`, `new_collection()` | Build catalogs and collections in memory |
 | `new_item()`, `new_properties()`, `new_asset()` | Build items, properties and assets |
-| `stac_add_collection()` / `stac_add_items()` | Register collections/items and return the parent |
-| `stac_add_link()` / `stac_add_asset()` | Pure builders for links and assets |
-| `stac_save()` | Write any document to its canonical path |
+| `add_collection()` / `add_items()` | Attach a collection/items to a parent, return it |
+| `add_link()` / `add_asset()` | Attach links and assets |
+| `stac_read()` | Read a document from disk (load-or-create with `default`) |
+| `stac_save()` | Write documents to their canonical paths (the only writer) |
 | `extract_bbox()` / `as_geometry()` | Spatial metadata helpers |
 | `stac_style()` / `qml_to_style()` | Thumbnail style objects |
-| `new_thumbnail()` | Render a PNG thumbnail asset |
+| `new_thumbnail()` | Describe a PNG thumbnail asset (rendered on save) |
+
+`new_*()` constructors and `add_*()` builders are pure and never touch
+disk; `stac_read()` and `stac_save()` are the only functions that do.
+
+## Documentation
+
+- Full function reference and articles:
+  <https://rolfsimoes.github.io/rstatic/>
+- Get started: `vignette("rstatic")`
+- Per-function help, e.g. `?stac_save`
+
+## Getting help
+
+Found a bug or have a feature request? Please open an issue at
+<https://github.com/rolfsimoes/rstatic/issues>.
+
+## Related work
+
+`rstatic` focuses on *writing* static catalogs from primitives. If you
+instead need to *query* remote STAC APIs from R, see
+[`rstac`](https://github.com/brazil-data-cube/rstac).
 
 ## License
 
-GPL (\>= 3)
+GPL (\>= 3). See [LICENSE.md](LICENSE.md).

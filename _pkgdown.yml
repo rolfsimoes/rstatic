@@ -6,22 +6,23 @@ reference:
 - title: Catalogs
   contents:
   - new_catalog
-  - stac_init
+  - add_collection
 - title: Collections
   contents:
   - new_collection
-  - stac_add_collection
+  - add_items
 - title: Items, properties and assets
   contents:
   - new_item
   - new_properties
   - new_asset
-  - stac_add_items
-  - stac_add_asset
-  - stac_add_link
+  - add_items
+  - add_asset
+  - add_link
 - title: Persistence
   contents:
   - stac_save
+  - stac_read
 - title: Spatial helpers
   contents:
   - extract_bbox

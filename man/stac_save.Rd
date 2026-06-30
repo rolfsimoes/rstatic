@@ -2,33 +2,53 @@
 % Please edit documentation in R/save-funs.R
 \name{stac_save}
 \alias{stac_save}
-\title{Save a STAC document to its canonical path}
+\title{Save STAC documents to their canonical paths}
 \usage{
-stac_save(obj, root_dir = ".")
+stac_save(catalog = NULL, collection = NULL, items = NULL, root_dir = ".")
 }
 \arguments{
-\item{obj}{A \code{doc_catalog}, \code{doc_collection}, or \code{doc_item} object.}
+\item{catalog}{An optional \code{doc_catalog} from \code{\link[=new_catalog]{new_catalog()}}.}
+
+\item{collection}{An optional \code{doc_collection} from \code{\link[=new_collection]{new_collection()}}. When
+\code{items} are given, supplies their \code{collection} field.}
+
+\item{items}{An optional \code{doc_item}, or a \code{list} of \code{doc_item} objects.}
 
 \item{root_dir}{A \code{character} directory under which the \verb{stac/} tree is
 written. Defaults to the current working directory.}
 }
 \value{
-Invisibly, the saved object (re-classed as an rstatic document).
+Invisibly, \code{NULL}.
 }
 \description{
-Writes a STAC \code{Catalog}, \code{Collection}, or \code{Item} to disk following the
-canonical static catalog layout:
+Writes a STAC \code{Catalog}, \code{Collection}, and/or \code{Item} documents to disk
+following the canonical static catalog layout:
 \itemize{
 \item \code{Catalog}    -> \code{stac/catalog.json}
 \item \code{Collection} -> \code{stac/collections/{id}/collection.json}
 \item \code{Item}       -> \code{stac/collections/{collection}/items/{id}/item.json}
 }
 
-Items must carry a \code{collection} field so their path can be resolved.
+\code{stac_save()} is the only writer in the package, and it is a \strong{pure
+overwrite}: it writes exactly the documents it is given, with no disk reads
+and no implicit merging. To accumulate state across runs (for example a
+catalog populated by several scripts), read the existing document first with
+\code{\link[=stac_read]{stac_read()}}, add to it with the \verb{add_*()} builders, then save the result.
+
+Documents are written children-first (items, then collection, then catalog)
+so a reader following a parent's links always finds the child already on
+disk. Items are stamped with the \code{collection} field from the \code{collection}
+argument when they do not already carry one. Any asset built with
+\code{\link[=new_thumbnail]{new_thumbnail()}} is rendered to a PNG at this point (requires \pkg{terra}).
 }
 \examples{
 dir <- tempfile("stac-")
 cat <- new_catalog("c", "Catalog", "An example catalog")
-stac_save(cat, root_dir = dir)
+col <- new_collection("col", "Collection", "An example collection")
+item <- new_item("item-1", bbox = c(-50, -10, -49, -9))
+
+col <- add_items(col, item)
+cat <- add_collection(cat, col)
+stac_save(catalog = cat, collection = col, items = item, root_dir = dir)
 
 }

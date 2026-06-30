@@ -1,86 +1,93 @@
-#' @title Generate a thumbnail asset
+#' @title Describe a thumbnail asset
 #'
 #' @name new_thumbnail
 #'
 #' @description
-#' Renders a PNG thumbnail from a raster and returns a STAC `Asset` pointing to
-#' it. The thumbnail is written under the canonical item directory
-#' `stac/collections/{collection_id}/items/{item_id}/thumbnail.png`.
+#' Pure builder that returns a STAC `Asset` describing a PNG thumbnail to be
+#' rendered from a raster. No raster is read and no file is written here: the
+#' render *intent* (source raster, width, and style) is carried on the asset and
+#' materialized later, when the owning item is written with [stac_save()].
 #'
 #' The optional `style` argument controls how raster values are mapped to
 #' pixels. Build it with [stac_style()] or [qml_to_style()]. Without a style,
 #' the raster is rendered with `terra`'s default settings.
 #'
-#' This function requires the optional \pkg{terra} package. If \pkg{terra} is
-#' not installed, build the thumbnail asset manually with [new_asset()].
+#' Rendering happens at save time and requires the optional \pkg{terra}
+#' package. If \pkg{terra} is not available, build the asset manually with
+#' [new_asset()] instead.
 #'
-#' @param collection_id A `character` collection identifier.
-#' @param item_id       A `character` item identifier.
-#' @param asset_href    A `character` path or URL to the source raster.
-#' @param width         An `integer` thumbnail width in pixels. Defaults to
-#'   `800`.
-#' @param title         A `character` asset title. Defaults to `"Thumbnail"`.
-#' @param style         An optional `rstatic_style` object from [stac_style()]
+#' @param asset_href A `character` path or URL to the source raster.
+#' @param width      An `integer` thumbnail width in pixels. Defaults to `800`.
+#' @param title      A `character` asset title. Defaults to `"Thumbnail"`.
+#' @param style      An optional `rstatic_style` object from [stac_style()]
 #'   or [qml_to_style()].
-#' @param root_dir      A `character` directory under which the thumbnail is
-#'   written. Defaults to the current working directory.
-#' @param ...           Additional arguments passed to the underlying `terra`
-#'   plotting function.
+#' @param ...        Additional arguments passed to the underlying `terra`
+#'   plotting function at render time.
 #'
-#' @return A `list` describing the thumbnail asset (as from [new_asset()]).
+#' @return A `doc_asset` with `href` `"thumbnail.png"` and roles `"thumbnail"`,
+#'   carrying the render intent so [stac_save()] can produce the PNG.
 #'
 #' @examples
-#' if (requireNamespace("terra", quietly = TRUE)) {
-#'   f <- system.file("extdata/example.tif", package = "rstatic")
-#'   if (nzchar(f)) {
-#'     dir <- tempfile("stac-")
-#'     new_thumbnail(
-#'       collection_id = "col",
-#'       item_id = "item-1",
-#'       asset_href = f,
-#'       style = stac_style(min = 0, max = 0.5, palette = c("black", "white")),
-#'       root_dir = dir
-#'     )
-#'   }
-#' }
+#' f <- system.file("extdata/S2_20LMR_B04_20220630.tif", package = "rstatic")
+#' thumb <- new_thumbnail(
+#'   asset_href = f,
+#'   style = stac_style(min = 0, max = 0.5, palette = c("black", "white"))
+#' )
+#' thumb$roles
+#'
+#' # Attach to an item; the PNG is rendered when the item is saved.
+#' item <- new_item("item-1", bbox = c(-50, -10, -49, -9))
+#' item <- add_asset(item, "thumbnail", thumb)
 #'
 #' @export
-new_thumbnail <- function(collection_id,
-                          item_id,
-                          asset_href,
+new_thumbnail <- function(asset_href,
                           width = 800,
                           title = "Thumbnail",
                           style = NULL,
-                          root_dir = ".",
                           ...) {
-  if (!requireNamespace("terra", quietly = TRUE)) {
-    stop(
-      "Package 'terra' is required by 'new_thumbnail()'. ",
-      "Install it, or build the thumbnail asset manually with 'new_asset()'.",
-      call. = FALSE
-    )
-  }
-
   if (!is.null(style) && !inherits(style, "rstatic_style")) {
     stop("`style` must be an `rstatic_style` object from `stac_style()` ",
          "or `qml_to_style()`.", call. = FALSE)
   }
 
-  url <- asset_href
+  asset <- new_asset("thumbnail.png", title = title, roles = list("thumbnail"))
+  attr(asset, "thumbnail_spec") <- list(
+    source = asset_href,
+    width = width,
+    style = style,
+    args = list(...)
+  )
+  asset
+}
+
+#' Render a thumbnail intent to a PNG file
+#'
+#' Materializes the render spec produced by [new_thumbnail()]. Called by
+#' [stac_save()] when writing an item; requires \pkg{terra}.
+#'
+#' @keywords internal
+#' @noRd
+.render_thumbnail <- function(spec, output_path) {
+  if (!requireNamespace("terra", quietly = TRUE)) {
+    stop(
+      "Package 'terra' is required to render thumbnail assets at save time. ",
+      "Install it, or build the asset manually with 'new_asset()'.",
+      call. = FALSE
+    )
+  }
+
+  url <- spec$source
   vsi_url <- url
   if (grepl("^http", url) && !grepl("^/vsicurl/", url)) {
     vsi_url <- paste0("/vsicurl/", url)
   }
 
-  item_dir <- file.path(
-    root_dir, "stac", "collections", collection_id, "items", item_id
-  )
-  output_path <- file.path(item_dir, "thumbnail.png")
-  dir.create(item_dir, showWarnings = FALSE, recursive = TRUE)
+  dir.create(dirname(output_path), showWarnings = FALSE, recursive = TRUE)
 
   r <- suppressWarnings(terra::rast(vsi_url))
   ex <- terra::ext(r)
   aspect_ratio <- (ex[4] - ex[3]) / (ex[2] - ex[1])
+  width <- spec$width
   height <- round(width * aspect_ratio)
 
   if (height > 2000) {
@@ -93,15 +100,12 @@ new_thumbnail <- function(collection_id,
   on.exit(grDevices::dev.off(), add = TRUE)
   graphics::par(mar = c(0, 0, 0, 0), oma = c(0, 0, 0, 0))
 
-  if (is.null(style)) {
-    render_default(r, ...)
+  if (is.null(spec$style)) {
+    do.call(render_default, c(list(r), spec$args))
   } else {
-    render_style(style, r, ...)
+    do.call(render_style, c(list(spec$style, r), spec$args))
   }
-
-  asset <- new_asset("thumbnail.png", title = title, roles = list("thumbnail"))
-  attr(asset, "local_path") <- output_path
-  asset
+  invisible(output_path)
 }
 
 #' Render a raster without an explicit style

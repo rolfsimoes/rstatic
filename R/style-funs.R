@@ -282,12 +282,22 @@ new_style_rgb <- function(bands, min, max, pmin, pmax, nodata, opacity, gamma) {
 #'
 #' @export
 print.rstatic_style <- function(x, ...) {
-  cat(sprintf("<rstatic_style: %s>\n", x$mode))
-  if (!is.null(x$bands)) {
-    cat(sprintf("  bands: %s\n", paste(x$bands, collapse = ", ")))
-  }
+  .print_header("Style", x$mode)
+  fields <- list(bands = x$bands)
   if (identical(x$mode, "categorical")) {
-    cat(sprintf("  categories: %d\n", nrow(x$categories)))
+    labs <- x$categories$label
+    if (is.null(labs) || all(is.na(labs))) {
+      labs <- x$categories$value
+    }
+    joined <- paste(labs, collapse = ", ")
+    if (nchar(joined) > 70L) {
+      joined <- sprintf(
+        "%s... (%d)",
+        sub(",?\\s*$", "", substr(joined, 1L, 70L)),
+        length(labs)
+      )
+    }
+    fields$labels <- joined
   } else {
     stretch <- c(
       if (!is.null(x$min)) sprintf("min=%s", format(x$min)),
@@ -295,20 +305,20 @@ print.rstatic_style <- function(x, ...) {
       if (!is.null(x$pmin)) sprintf("pmin=%s", format(x$pmin)),
       if (!is.null(x$pmax)) sprintf("pmax=%s", format(x$pmax))
     )
-    if (length(stretch)) cat(sprintf("  stretch: %s\n",
-                                     paste(stretch, collapse = ", ")))
+    fields$stretch <- if (length(stretch)) paste(stretch, collapse = ", ")
     if (!is.null(x$palette)) {
-      if (length(x$palette) > 6L) {
-        cat(sprintf("  palette: %s, ... (%d colors)\n",
-                    paste(utils::head(x$palette, 4L), collapse = ", "),
-                    length(x$palette)))
+      fields$palette <- if (length(x$palette) > 6L) {
+        sprintf("%s, ... (%d colors)",
+                paste(utils::head(x$palette, 4L), collapse = ", "),
+                length(x$palette))
       } else {
-        cat(sprintf("  palette: %s\n", paste(x$palette, collapse = ", ")))
+        paste(x$palette, collapse = ", ")
       }
     }
-    if (!is.null(x$gamma)) cat(sprintf("  gamma: %s\n", format(x$gamma)))
+    fields$gamma <- x$gamma
   }
-  if (!is.null(x$nodata)) cat(sprintf("  nodata: %s\n", format(x$nodata)))
-  if (!is.null(x$opacity)) cat(sprintf("  opacity: %s\n", format(x$opacity)))
+  fields$nodata <- x$nodata
+  fields$opacity <- x$opacity
+  .print_fields(fields)
   invisible(x)
 }

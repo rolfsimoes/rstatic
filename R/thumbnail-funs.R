@@ -8,6 +8,11 @@
 #' render *intent* (source raster, width, and style) is carried on the asset and
 #' materialized later, when the owning item is written with [stac_save()].
 #'
+#' `new_thumbnail()` is generic. Pass the source either as a `character` path or
+#' URL, or as a `doc_asset` from [new_asset()] -- typically the item's data
+#' asset -- in which case the raster is taken from the asset's resolved
+#' `local_path` (see [update_root()]) or its `href`.
+#'
 #' The optional `style` argument controls how raster values are mapped to
 #' pixels. Build it with [stac_style()] or [qml_to_style()]. Without a style,
 #' the raster is rendered with `terra`'s default settings.
@@ -16,35 +21,47 @@
 #' package. If \pkg{terra} is not available, build the asset manually with
 #' [new_asset()] instead.
 #'
-#' @param asset_href A `character` path or URL to the source raster.
-#' @param width      An `integer` thumbnail width in pixels. Defaults to `800`.
-#' @param title      A `character` asset title. Defaults to `"Thumbnail"`.
-#' @param style      An optional `rstatic_style` object from [stac_style()]
+#' @param x      A `character` path or URL to the source raster, or a `doc_asset`
+#'   from [new_asset()] pointing at it.
+#' @param width  An `integer` thumbnail width in pixels. Defaults to `800`.
+#' @param title  A `character` asset title. Defaults to `"Thumbnail"`.
+#' @param style  An optional `rstatic_style` object from [stac_style()]
 #'   or [qml_to_style()].
-#' @param ...        Additional arguments passed to the underlying `terra`
+#' @param ...    Additional arguments passed to the underlying `terra`
 #'   plotting function at render time.
 #'
 #' @return A `doc_asset` with `href` `"thumbnail.png"` and roles `"thumbnail"`,
 #'   carrying the render intent so [stac_save()] can produce the PNG.
 #'
 #' @examples
-#' f <- system.file("extdata/S2_20LMR_B04_20220630.tif", package = "rstatic")
-#' thumb <- new_thumbnail(
-#'   asset_href = f,
-#'   style = stac_style(min = 0, max = 0.5, palette = c("black", "white"))
-#' )
-#' thumb$roles
+#' f <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.tif",
+#'                   package = "rstatic")
+#' style <- stac_style(min = 192, max = 1371, palette = c("black", "white"))
 #'
-#' # Attach to an item; the PNG is rendered when the item is saved.
-#' item <- new_item("item-1", bbox = c(-50, -10, -49, -9))
+#' # Build an item with a data asset, then derive the thumbnail from that asset.
+#' item <- new_item(
+#'   "item-1",
+#'   bbox = c(-50, -10, -49, -9),
+#'   assets = list(data = new_asset(f, title = "B04"))
+#' )
+#' thumb <- new_thumbnail(item$assets$data, style = style)
 #' item <- add_asset(item, "thumbnail", thumb)
 #'
+#' # A plain path or URL works too.
+#' new_thumbnail(f, style = style)$roles
+#'
 #' @export
-new_thumbnail <- function(asset_href,
-                          width = 800,
-                          title = "Thumbnail",
-                          style = NULL,
-                          ...) {
+new_thumbnail <- function(x, ...) {
+  UseMethod("new_thumbnail")
+}
+
+#' @rdname new_thumbnail
+#' @export
+new_thumbnail.character <- function(x,
+                                    width = 800,
+                                    title = "Thumbnail",
+                                    style = NULL,
+                                    ...) {
   if (!is.null(style) && !inherits(style, "rstatic_style")) {
     stop("`style` must be an `rstatic_style` object from `stac_style()` ",
          "or `qml_to_style()`.", call. = FALSE)
@@ -52,12 +69,23 @@ new_thumbnail <- function(asset_href,
 
   asset <- new_asset("thumbnail.png", title = title, roles = list("thumbnail"))
   attr(asset, "thumbnail_spec") <- list(
-    source = asset_href,
+    source = x,
     width = width,
     style = style,
     args = list(...)
   )
   asset
+}
+
+#' @rdname new_thumbnail
+#' @export
+new_thumbnail.doc_asset <- function(x,
+                                    width = 800,
+                                    title = "Thumbnail",
+                                    style = NULL,
+                                    ...) {
+  new_thumbnail(.asset_source(x), width = width, title = title, style = style,
+                ...)
 }
 
 #' Render a thumbnail intent to a PNG file

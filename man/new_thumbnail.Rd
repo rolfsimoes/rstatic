@@ -2,12 +2,22 @@
 % Please edit documentation in R/thumbnail-funs.R
 \name{new_thumbnail}
 \alias{new_thumbnail}
+\alias{new_thumbnail.character}
+\alias{new_thumbnail.doc_asset}
 \title{Describe a thumbnail asset}
 \usage{
-new_thumbnail(asset_href, width = 800, title = "Thumbnail", style = NULL, ...)
+new_thumbnail(x, ...)
+
+\method{new_thumbnail}{character}(x, width = 800, title = "Thumbnail", style = NULL, ...)
+
+\method{new_thumbnail}{doc_asset}(x, width = 800, title = "Thumbnail", style = NULL, ...)
 }
 \arguments{
-\item{asset_href}{A \code{character} path or URL to the source raster.}
+\item{x}{A \code{character} path or URL to the source raster, or a \code{doc_asset}
+from \code{\link[=new_asset]{new_asset()}} pointing at it.}
+
+\item{...}{Additional arguments passed to the underlying \code{terra}
+plotting function at render time.}
 
 \item{width}{An \code{integer} thumbnail width in pixels. Defaults to \code{800}.}
 
@@ -15,9 +25,6 @@ new_thumbnail(asset_href, width = 800, title = "Thumbnail", style = NULL, ...)
 
 \item{style}{An optional \code{rstatic_style} object from \code{\link[=stac_style]{stac_style()}}
 or \code{\link[=qml_to_style]{qml_to_style()}}.}
-
-\item{...}{Additional arguments passed to the underlying \code{terra}
-plotting function at render time.}
 }
 \value{
 A \code{doc_asset} with \code{href} \code{"thumbnail.png"} and roles \code{"thumbnail"},
@@ -29,6 +36,11 @@ rendered from a raster. No raster is read and no file is written here: the
 render \emph{intent} (source raster, width, and style) is carried on the asset and
 materialized later, when the owning item is written with \code{\link[=stac_save]{stac_save()}}.
 
+\code{new_thumbnail()} is generic. Pass the source either as a \code{character} path or
+URL, or as a \code{doc_asset} from \code{\link[=new_asset]{new_asset()}} -- typically the item's data
+asset -- in which case the raster is taken from the asset's resolved
+\code{local_path} (see \code{\link[=update_root]{update_root()}}) or its \code{href}.
+
 The optional \code{style} argument controls how raster values are mapped to
 pixels. Build it with \code{\link[=stac_style]{stac_style()}} or \code{\link[=qml_to_style]{qml_to_style()}}. Without a style,
 the raster is rendered with \code{terra}'s default settings.
@@ -38,15 +50,20 @@ package. If \pkg{terra} is not available, build the asset manually with
 \code{\link[=new_asset]{new_asset()}} instead.
 }
 \examples{
-f <- system.file("extdata/S2_20LMR_B04_20220630.tif", package = "rstatic")
-thumb <- new_thumbnail(
-  asset_href = f,
-  style = stac_style(min = 0, max = 0.5, palette = c("black", "white"))
-)
-thumb$roles
+f <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.tif",
+                  package = "rstatic")
+style <- stac_style(min = 192, max = 1371, palette = c("black", "white"))
 
-# Attach to an item; the PNG is rendered when the item is saved.
-item <- new_item("item-1", bbox = c(-50, -10, -49, -9))
+# Build an item with a data asset, then derive the thumbnail from that asset.
+item <- new_item(
+  "item-1",
+  bbox = c(-50, -10, -49, -9),
+  assets = list(data = new_asset(f, title = "B04"))
+)
+thumb <- new_thumbnail(item$assets$data, style = style)
 item <- add_asset(item, "thumbnail", thumb)
+
+# A plain path or URL works too.
+new_thumbnail(f, style = style)$roles
 
 }

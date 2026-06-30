@@ -3,5 +3,5 @@ inst/doc
 docs
 /doc/
 /Meta/
-AGENTS.md
-CLAUDE.md
+.Rhistory
+pkgdown/

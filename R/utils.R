@@ -55,7 +55,11 @@
   if (is.null(links)) {
     links <- list()
   }
-  exists <- vapply(links, function(l) isTRUE(l$href == href), logical(1))
+  exists <- vapply(
+    links,
+    function(l) isTRUE(l$rel == rel) && isTRUE(l$href == href),
+    logical(1)
+  )
   if (any(exists)) {
     return(links)
   }
@@ -134,6 +138,9 @@
   }
   if (!is.null(x$assets)) {
     x$assets <- lapply(x$assets, .as_doc_asset)
+  }
+  if (!is.null(x$geometry)) {
+    class(x$geometry) <- c("doc_geometry", "list")
   }
   type <- x$type
   if (is.null(type)) {

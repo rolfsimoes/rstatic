@@ -9,7 +9,7 @@
 #' terminal does not support colors.
 #'
 #' @param x   A STAC document or element: `doc_catalog`, `doc_collection`,
-#'   `doc_item`, `doc_asset`, `doc_link`, or `doc_links`.
+#'   `doc_item`, `doc_asset`, `doc_link`, `doc_links`, or `doc_geometry`.
 #' @param n   Maximum number of entries to print for `doc_links`. Defaults to
 #'   `10`.
 #' @param ... Additional arguments (currently ignored).
@@ -23,24 +23,38 @@
 NULL
 
 # ---- internal helpers -------------------------------------------------------
+# These helpers define the single, shared print style used across the package
+# (STAC documents and `rstatic_style` objects alike): an angle-bracket header
+# `<type: subtitle>` followed by indented `label: value` rows, lightly styled
+# with the cli package.
 
-#' Print a styled header line, e.g. `# STAC Item land-cover-2020`
+#' Print a styled header line, e.g. `<STAC Item: land-cover-2020>`
+#'
+#' The structural parts (brackets and type) are bold cyan; the identifier is
+#' yellow, mirroring git's convention of colouring object ids/hashes yellow.
+#' This keeps the palette to three restrained roles (cyan, yellow, grey).
 #'
 #' @keywords internal
 #' @noRd
-.stac_header <- function(type, subtitle = NULL) {
-  cat(cli::style_bold(cli::col_cyan(paste0("# STAC ", type))))
+.print_header <- function(type, subtitle = NULL) {
   if (!is.null(subtitle) && nzchar(as.character(subtitle))) {
-    cat(" ", cli::col_silver(as.character(subtitle)), sep = "")
+    cat(
+      cli::style_bold(cli::col_cyan(paste0("<", type, ": "))),
+      cli::col_yellow(as.character(subtitle)),
+      cli::style_bold(cli::col_cyan(">")),
+      "\n",
+      sep = ""
+    )
+  } else {
+    cat(cli::style_bold(cli::col_cyan(paste0("<", type, ">"))), "\n", sep = "")
   }
-  cat("\n")
 }
 
 #' Format a field value into a single, compact line
 #'
 #' @keywords internal
 #' @noRd
-.stac_value <- function(v) {
+.print_value <- function(v) {
   if (is.list(v)) {
     v <- unlist(v, use.names = FALSE)
   }
@@ -50,11 +64,11 @@ NULL
   paste(format(v, trim = TRUE, scientific = FALSE), collapse = ", ")
 }
 
-#' Print aligned `label  value` rows, dropping empty fields
+#' Print `label: value` rows, dropping empty fields
 #'
 #' @keywords internal
 #' @noRd
-.stac_fields <- function(fields) {
+.print_fields <- function(fields) {
   keep <- !vapply(
     fields,
     function(v) is.null(v) || length(v) == 0 ||
@@ -65,12 +79,10 @@ NULL
   if (length(fields) == 0) {
     return(invisible())
   }
-  labels <- names(fields)
-  width <- max(nchar(labels))
-  for (label in labels) {
+  for (label in names(fields)) {
     cat(
-      "  ", cli::col_silver(formatC(label, width = -width)), "  ",
-      .stac_value(fields[[label]]), "\n",
+      "  ", cli::col_silver(label), ": ",
+      .print_value(fields[[label]]), "\n",
       sep = ""
     )
   }
@@ -82,8 +94,8 @@ NULL
 #' @rdname print_rstatic
 #' @export
 print.doc_catalog <- function(x, ...) {
-  .stac_header("Catalog", x$id)
-  .stac_fields(list(
+  .print_header("STAC Catalog", x$id)
+  .print_fields(list(
     title = x$title,
     description = x$description,
     links = length(x$links)
@@ -94,8 +106,8 @@ print.doc_catalog <- function(x, ...) {
 #' @rdname print_rstatic
 #' @export
 print.doc_collection <- function(x, ...) {
-  .stac_header("Collection", x$id)
-  .stac_fields(list(
+  .print_header("STAC Collection", x$id)
+  .print_fields(list(
     title = x$title,
     description = x$description,
     license = x$license,
@@ -108,8 +120,8 @@ print.doc_collection <- function(x, ...) {
 #' @rdname print_rstatic
 #' @export
 print.doc_item <- function(x, ...) {
-  .stac_header("Item", x$id)
-  .stac_fields(list(
+  .print_header("STAC Item", x$id)
+  .print_fields(list(
     collection = x$collection,
     bbox = x$bbox,
     datetime = x$properties$datetime,
@@ -124,11 +136,27 @@ print.doc_item <- function(x, ...) {
 #' @rdname print_rstatic
 #' @export
 print.doc_asset <- function(x, ...) {
-  .stac_header("Asset", x$title)
-  .stac_fields(list(
+  .print_header("STAC Asset", x$title)
+  .print_fields(list(
     href = x$href,
     type = x$type,
     roles = x$roles
+  ))
+  invisible(x)
+}
+
+# ---- geometry ---------------------------------------------------------------
+
+#' @rdname print_rstatic
+#' @export
+print.doc_geometry <- function(x, ...) {
+  .print_header("GeoJSON Geometry", x$type)
+  pts <- matrix(
+    unlist(x$coordinates, use.names = FALSE),
+    ncol = 2, byrow = TRUE
+  )
+  .print_fields(list(
+    bbox = c(min(pts[, 1]), min(pts[, 2]), max(pts[, 1]), max(pts[, 2]))
   ))
   invisible(x)
 }
@@ -138,8 +166,8 @@ print.doc_asset <- function(x, ...) {
 #' @rdname print_rstatic
 #' @export
 print.doc_link <- function(x, ...) {
-  .stac_header("Link", x$rel)
-  .stac_fields(list(
+  .print_header("STAC Link", x$rel)
+  .print_fields(list(
     href = x$href,
     type = x$type,
     title = x$title
@@ -150,14 +178,12 @@ print.doc_link <- function(x, ...) {
 #' @rdname print_rstatic
 #' @export
 print.doc_links <- function(x, n = 10, ...) {
-  .stac_header("Links", sprintf("(%d)", length(x)))
+  .print_header("STAC Links", sprintf("%d", length(x)))
   show <- utils::head(unclass(x), n)
-  rels <- vapply(show, function(l) l$rel %||% "", character(1))
-  width <- if (length(rels) > 0) max(nchar(rels)) else 0
   for (link in show) {
-    rel <- formatC(link$rel %||% "", width = -width)
+    rel <- link$rel %||% ""
     label <- link$title %||% link$href %||% ""
-    cat("  ", cli::col_silver(rel), "  ", label, "\n", sep = "")
+    cat("  ", cli::col_silver(rel), ": ", label, "\n", sep = "")
   }
   more <- length(x) - length(show)
   if (more > 0) {

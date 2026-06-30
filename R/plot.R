@@ -4,10 +4,11 @@
 #'
 #' @description
 #' Plot visual assets such as thumbnails, quicklooks, or raster previews.
-#' Supported file formats are `png`, `jpeg`, and `tiff`/`tif`. When a thumbnail
-#' is generated with [new_thumbnail()], the full path is stored as an internal
-#' attribute so that the plot method can locate the file even when the asset's
-#' `href` is relative.
+#' Supported file formats are `png`, `jpeg`, and `tiff`/`tif`. The file is
+#' resolved from the asset's `local_path` attribute when present, otherwise from
+#' its `href`. Set `local_path` to point the plot method at a rendered file when
+#' the asset's `href` is relative (for example a thumbnail written under an item
+#' directory by [stac_save()]).
 #'
 #' @param x   A `doc_asset` object.
 #' @param ... Additional arguments passed to the underlying plotting engine

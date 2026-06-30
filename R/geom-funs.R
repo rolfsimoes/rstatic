@@ -38,7 +38,7 @@
 #'
 #' # extract_bbox() requires terra
 #' if (requireNamespace("terra", quietly = TRUE)) {
-#'   f <- system.file("extdata/example.tif", package = "rstatic")
+#'   f <- system.file("extdata/S2_20LMR_B04_20220630.tif", package = "rstatic")
 #'   if (nzchar(f)) {
 #'     extract_bbox(f)
 #'   }
@@ -83,7 +83,7 @@ as_geometry <- function(bbox) {
   if (is.null(bbox)) {
     return(NULL)
   }
-  list(
+  geom <- list(
     type = "Polygon",
     coordinates = list(list(
       c(bbox[1], bbox[2]),
@@ -93,4 +93,6 @@ as_geometry <- function(bbox) {
       c(bbox[1], bbox[2])
     ))
   )
+  class(geom) <- c("doc_geometry", "list")
+  geom
 }

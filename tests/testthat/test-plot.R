@@ -10,19 +10,24 @@ test_that("plot.doc_asset() renders a local PNG asset", {
   expect_invisible(plot(asset))
 })
 
-test_that("new_thumbnail() attaches a local_path attribute", {
+test_that("a saved thumbnail PNG can be plotted via its path", {
   skip_if_not_installed("terra")
+  skip_if_not_installed("png")
 
   root <- withr::local_tempdir()
-  thumb <- new_thumbnail(
-    collection_id = "col",
-    item_id = "item",
-    asset_href = system.file("extdata/example.tif", package = "rstatic"),
-    width = 20,
-    root_dir = root
-  )
+  f <- system.file("extdata/S2_20LMR_B04_20220630.tif", package = "rstatic")
+  skip_if(!nzchar(f))
 
-  expect_true(inherits(thumb, "doc_asset"))
-  expect_true(file.exists(attr(thumb, "local_path")))
-  expect_equal(basename(attr(thumb, "local_path")), "thumbnail.png")
+  item <- new_item("item", bbox = c(-50, -10, -49, -9))
+  item <- add_asset(item, "thumbnail", new_thumbnail(asset_href = f,
+                                                     width = 20))
+  stac_save(collection = new_collection("col", "C", "D"), items = item,
+            root_dir = root)
+
+  png_path <- file.path(root, "stac", "collections", "col", "items", "item",
+                        "thumbnail.png")
+  expect_true(file.exists(png_path))
+
+  asset <- new_asset(png_path, title = "thumb", roles = list("thumbnail"))
+  expect_invisible(plot(asset))
 })

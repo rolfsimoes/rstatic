@@ -22,15 +22,15 @@ test_that("item assets are classed as doc_asset", {
   expect_s3_class(item$assets$data, "doc_asset")
 })
 
-test_that("stac_add_asset keeps assets classed as doc_asset", {
+test_that("add_asset keeps assets classed as doc_asset", {
   item <- new_item("i", bbox = c(0, 0, 1, 1))
-  item <- stac_add_asset(item, "data", new_asset("data.tif"))
+  item <- add_asset(item, "data", new_asset("data.tif"))
   expect_s3_class(item$assets$data, "doc_asset")
 })
 
-test_that("stac_add_link keeps links classed as doc_links/doc_link", {
+test_that("add_link keeps links classed as doc_links/doc_link", {
   cat <- new_catalog("cat", "Catalog", "Desc")
-  cat <- stac_add_link(cat, "child", "x.json")
+  cat <- add_link(cat, "child", "x.json")
   expect_s3_class(cat$links, "doc_links")
   expect_s3_class(cat$links[[length(cat$links)]], "doc_link")
 })
@@ -40,7 +40,11 @@ test_that("print methods dispatch and return their input invisibly", {
 
   asset <- new_asset("data.tif", title = "Data")
   expect_output(print(asset), "STAC Asset")
-  expect_identical(withVisible(print(asset))$visible, FALSE)
+  # Suppress output to check visibility
+  invisible(capture.output(
+    result <- withVisible(print(asset))
+  ))
+  expect_identical(result$visible, FALSE)
 
   item <- new_item("i", bbox = c(0, 0, 1, 1))
   expect_output(print(item$links), "STAC Links")

@@ -8,6 +8,13 @@
 #' is lightly styled with the \pkg{cli} package and degrades gracefully when a
 #' terminal does not support colors.
 #'
+#' A curated set of fields is shown per document. `doc_collection` and
+#' `doc_item` also summarize their spatial and temporal extent: the collection
+#' prints the union `bbox` and `interval` of its extent, and the item prints its
+#' `bbox` and a `datetime` that prefers a `start_datetime`/`end_datetime` range
+#' when present. Both close with a dimmed, complete list of their field names,
+#' so every accessible field is discoverable without overwhelming the summary.
+#'
 #' @param x   A STAC document or element: `doc_catalog`, `doc_collection`,
 #'   `doc_item`, `doc_asset`, `doc_link`, `doc_links`, or `doc_geometry`.
 #' @param n   Maximum number of entries to print for `doc_links`. Defaults to
@@ -89,6 +96,108 @@ NULL
   invisible()
 }
 
+#' Print the full, sorted list of a document's field names, de-emphasized
+#'
+#' Mirrors rstac's `field(s):` line so users can see every accessible field.
+#' It is dimmed so it recedes below the curated `label: value` rows above.
+#'
+#' @keywords internal
+#' @noRd
+.print_field_names <- function(x) {
+  nms <- names(x)
+  if (length(nms) == 0) {
+    return(invisible())
+  }
+  cat(
+    cli::style_dim(paste0("  fields: ", paste(sort(nms), collapse = ", "))),
+    "\n",
+    sep = ""
+  )
+  invisible()
+}
+
+#' Format an interval `[start, end]` as `start / end`, using `..` for open ends
+#'
+#' Returns `NULL` when both ends are open, so the row is dropped.
+#'
+#' @keywords internal
+#' @noRd
+.format_interval <- function(start, end) {
+  if (is.null(start) && is.null(end)) {
+    return(NULL)
+  }
+  paste0(start %||% "..", " / ", end %||% "..")
+}
+
+#' Resolve an item's temporal summary, preferring a start/end range
+#'
+#' When `start_datetime` or `end_datetime` is present, the range is shown (and
+#' takes precedence over `datetime`); otherwise the single `datetime` is used.
+#'
+#' @keywords internal
+#' @noRd
+.item_temporal <- function(properties) {
+  if (is.null(properties)) {
+    return(NULL)
+  }
+  start <- properties$start_datetime
+  end <- properties$end_datetime
+  if (!is.null(start) || !is.null(end)) {
+    return(.format_interval(start, end))
+  }
+  properties$datetime
+}
+
+#' Union of a collection's spatial extent bounding boxes
+#'
+#' Returns the overall `c(xmin, ymin, xmax, ymax)` (or the 6-value form with a
+#' vertical axis) spanning every bbox in `extent$spatial$bbox`, or `NULL` when
+#' no usable bbox is present.
+#'
+#' @keywords internal
+#' @noRd
+.extent_bbox <- function(x) {
+  bboxes <- x$extent$spatial$bbox
+  if (length(bboxes) == 0) {
+    return(NULL)
+  }
+  rows <- lapply(bboxes, function(b) {
+    suppressWarnings(as.numeric(unlist(b, use.names = FALSE)))
+  })
+  len <- length(rows[[1]])
+  rows <- rows[vapply(
+    rows, function(r) length(r) == len && !all(is.na(r)), logical(1)
+  )]
+  if (length(rows) == 0 || len < 4) {
+    return(NULL)
+  }
+  m <- do.call(rbind, rows)
+  half <- len %/% 2
+  c(
+    apply(m[, seq_len(half), drop = FALSE], 2, min, na.rm = TRUE),
+    apply(m[, half + seq_len(half), drop = FALSE], 2, max, na.rm = TRUE)
+  )
+}
+
+#' Union of a collection's temporal extent intervals, as `start / end`
+#'
+#' Takes the earliest start and latest end across `extent$temporal$interval`
+#' (RFC 3339 strings sort lexicographically). Returns `NULL` when fully open.
+#'
+#' @keywords internal
+#' @noRd
+.extent_interval <- function(x) {
+  intervals <- x$extent$temporal$interval
+  if (length(intervals) == 0) {
+    return(NULL)
+  }
+  starts <- unlist(lapply(intervals, `[[`, 1L), use.names = FALSE)
+  ends <- unlist(lapply(intervals, `[[`, 2L), use.names = FALSE)
+  start <- if (length(starts)) min(starts, na.rm = TRUE) else NULL
+  end <- if (length(ends)) max(ends, na.rm = TRUE) else NULL
+  .format_interval(start, end)
+}
+
 # ---- documents --------------------------------------------------------------
 
 #' @rdname print_rstatic
@@ -111,9 +220,12 @@ print.doc_collection <- function(x, ...) {
     title = x$title,
     description = x$description,
     license = x$license,
+    bbox = .extent_bbox(x),
+    interval = .extent_interval(x),
     assets = names(x$assets),
     links = length(x$links)
   ))
+  .print_field_names(x)
   invisible(x)
 }
 
@@ -124,10 +236,11 @@ print.doc_item <- function(x, ...) {
   .print_fields(list(
     collection = x$collection,
     bbox = x$bbox,
-    datetime = x$properties$datetime,
+    datetime = .item_temporal(x$properties),
     assets = names(x$assets),
     links = length(x$links)
   ))
+  .print_field_names(x)
   invisible(x)
 }
 

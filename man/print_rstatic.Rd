@@ -42,6 +42,13 @@ Minimalist, \code{tibble}-inspired S3 print methods for rstatic STAC documents
 and their child elements (\code{doc_link}, \code{doc_links}, and \code{doc_asset}). Output
 is lightly styled with the \pkg{cli} package and degrades gracefully when a
 terminal does not support colors.
+
+A curated set of fields is shown per document. \code{doc_collection} and
+\code{doc_item} also summarize their spatial and temporal extent: the collection
+prints the union \code{bbox} and \code{interval} of its extent, and the item prints its
+\code{bbox} and a \code{datetime} that prefers a \code{start_datetime}/\code{end_datetime} range
+when present. Both close with a dimmed, complete list of their field names,
+so every accessible field is discoverable without overwhelming the summary.
 }
 \examples{
 print(new_catalog("c", "Catalog", "An example catalog"))

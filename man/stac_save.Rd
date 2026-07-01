@@ -38,7 +38,9 @@ catalog populated by several scripts), read the existing document first with
 Documents are written children-first (items, then collection, then catalog)
 so a reader following a parent's links always finds the child already on
 disk. Items are stamped with the \code{collection} field from the \code{collection}
-argument when they do not already carry one. Any asset built with
+argument when they do not already carry one; an item that already records a
+\code{collection} keeps its own value, and a warning is emitted if that value
+differs from the \code{collection} argument. Any asset built with
 \code{\link[=new_thumbnail]{new_thumbnail()}} is rendered to a PNG at this point (requires \pkg{terra}).
 }
 \examples{

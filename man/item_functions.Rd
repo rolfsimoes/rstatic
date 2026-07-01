@@ -26,6 +26,7 @@ new_item(
   geometry = NULL,
   properties = new_properties(),
   assets = list(),
+  collection = NULL,
   stac_version = "1.0.0",
   ...
 )
@@ -35,7 +36,8 @@ add_items(collection, items)
 \arguments{
 \item{description}{A \code{character} description.}
 
-\item{datetime}{A \code{character} RFC 3339 datetime, or \code{NULL}.}
+\item{datetime}{A \code{character} RFC 3339 datetime, or \code{NULL}. Recorded as
+\code{null} when omitted alongside a \code{start_datetime}/\code{end_datetime} range.}
 
 \item{start_datetime}{A \code{character} RFC 3339 start datetime, or \code{NULL}.}
 
@@ -66,9 +68,14 @@ from \code{bbox} via \code{\link[=as_geometry]{as_geometry()}}.}
 
 \item{assets}{A named \code{list} of assets, e.g. from \code{new_asset()}.}
 
-\item{stac_version}{A \code{character} STAC version. Defaults to \code{"1.0.0"}.}
+\item{collection}{For \code{add_items()}, the \code{doc_collection} to link items
+into. For \code{new_item()}, an optional \code{doc_collection} or \code{character}
+collection id recorded as the item's top-level \code{collection} field. STAC
+requires this field whenever the item carries a \code{collection} link (as items
+built here always do); when omitted, \code{\link[=stac_save]{stac_save()}} stamps it from the
+\code{collection} it is given.}
 
-\item{collection}{A \code{doc_collection} object to add items to.}
+\item{stac_version}{A \code{character} STAC version. Defaults to \code{"1.0.0"}.}
 
 \item{items}{A single \code{doc_item}, or a \code{list} of \code{doc_item}
 objects, to link into the collection.}
@@ -93,6 +100,12 @@ Pure builders for the building blocks of a STAC \code{Item}. None touch disk; us
 the collection links and spatio-temporal extent, and returns the
 collection.
 }
+
+STAC requires every item to carry a \code{datetime}. When you describe a time
+range instead of a single instant, supply \code{start_datetime} and \code{end_datetime}
+and omit \code{datetime}; \code{new_properties()} then records \code{datetime} as \code{null}, as
+the specification mandates. \code{add_items()} derives the collection's temporal
+extent from the range (or from \code{datetime} when only that is given).
 }
 \examples{
 props <- new_properties(datetime = "2020-01-01T00:00:00Z")

@@ -2,41 +2,50 @@
 % Please edit documentation in R/root-funs.R
 \name{update_root}
 \alias{update_root}
-\title{Resolve an item's asset paths under a local root}
+\alias{update_root.doc_item}
+\alias{update_root.doc_collection}
+\title{Resolve a document's asset paths under a local root}
 \usage{
-update_root(item, root_dir, collection)
+update_root(x, root_dir)
+
+\method{update_root}{doc_item}(x, root_dir)
+
+\method{update_root}{doc_collection}(x, root_dir)
 }
 \arguments{
-\item{item}{A \code{doc_item} from \code{\link[=new_item]{new_item()}}.}
+\item{x}{A \code{doc_item} from \code{\link[=new_item]{new_item()}} or a \code{doc_collection} from
+\code{\link[=new_collection]{new_collection()}}.}
 
 \item{root_dir}{A \code{character} directory under which the \verb{stac/} tree was
 written by \code{\link[=stac_save]{stac_save()}}.}
-
-\item{collection}{A \code{doc_collection} from \code{\link[=new_collection]{new_collection()}}, or a
-\code{character} collection id. Supplies the collection segment of the item's
-on-disk path.}
 }
 \value{
-The \code{doc_item}, with the \code{local_path} attribute set on each asset
+The document \code{x}, with the \code{local_path} attribute set on each asset
 that has a relative \code{href}.
 }
 \description{
-Returns a copy of an in-memory \code{doc_item} whose assets point at their
+Returns a copy of an in-memory STAC document whose assets point at their
 on-disk locations under a local \code{root_dir}, following the canonical static
-catalog layout used by \code{\link[=stac_save]{stac_save()}}. For every asset with a relative
-\code{href}, the \code{local_path} attribute is set to
-\verb{root_dir/stac/collections/<collection>/items/<id>/<href>}. Assets whose
-\code{href} is already an absolute path or a URL are returned unchanged.
+catalog layout used by \code{\link[=stac_save]{stac_save()}}. For every asset with a relative \code{href},
+the \code{local_path} attribute is set to the file's location under \code{root_dir};
+assets whose \code{href} is already an absolute path or a URL are returned
+unchanged.
 
-\code{update_root()} is a pure helper: it reads no raster and writes no file. Its
-purpose is to make files produced by \code{\link[=stac_save]{stac_save()}} -- such as a thumbnail PNG
-rendered into the item directory -- resolvable by \code{\link[=plot]{plot()}} and other local
-readers, which consult an asset's \code{local_path} attribute before falling back
-to its \code{href}.
+\code{update_root()} is generic and dispatches on the document class:
+\itemize{
+\item \code{doc_item}: assets resolve under
+\verb{root_dir/stac/collections/<collection>/items/<id>/}. The collection is
+read from the item's own \code{collection} field, so build the item with
+\code{new_item(collection = ...)} (or save it first, which stamps the field).
+\item \code{doc_collection}: assets resolve under
+\verb{root_dir/stac/collections/<id>/}, which covers a collection-level
+thumbnail propagated from its items.
+}
 
-The \code{collection} is supplied explicitly because an in-memory item does not
-record the collection it belongs to; that field is stamped onto the written
-copy by \code{\link[=stac_save]{stac_save()}}, not onto the item in hand.
+It is a pure helper: it reads no raster and writes no file. Its purpose is to
+make files produced by \code{\link[=stac_save]{stac_save()}} -- such as a thumbnail PNG rendered into
+the item directory -- resolvable by \code{\link[=plot]{plot()}} and other local readers, which
+consult an asset's \code{local_path} attribute before falling back to its \code{href}.
 }
 \examples{
 root <- tempfile("stac-")
@@ -44,11 +53,12 @@ col <- new_collection("land-cover", "Land Cover", "Example collection")
 item <- new_item(
   "land-cover-2022",
   bbox = c(-50, -10, -49, -9),
+  collection = col,
   assets = list(data = new_asset("data.tif", title = "Data"))
 )
 stac_save(collection = col, items = item, root_dir = root)
 
-item <- update_root(item, root, col)
+item <- update_root(item, root)
 attr(item$assets$data, "local_path")
 
 }

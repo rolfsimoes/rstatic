@@ -2,8 +2,14 @@
 
 ## New features
 
-- Added `update_root()`, which re-points an item's assets at their on-disk locations under a local root directory, following the canonical static catalog layout. It sets each asset's `local_path` attribute so files written by `stac_save()` -- such as a rendered thumbnail -- can be resolved by `plot()` and other local readers. The collection is passed explicitly because an in-memory item does not record which collection owns it.
+- Added `update_root()`, which re-points a document's assets at their on-disk locations under a local root directory, following the canonical static catalog layout. It sets each asset's `local_path` attribute so files written by `stac_save()` -- such as a rendered thumbnail -- can be resolved by `plot()` and other local readers. It is an S3 generic: for a `doc_item` the paths resolve under the item directory (using the item's own `collection` field), and for a `doc_collection` under the collection directory (covering a propagated collection thumbnail).
+- `new_item()` gained an optional `collection` argument (a `doc_collection` or a `character` id) that records the item's top-level `collection` field. STAC requires this field whenever the item links to a collection; when omitted, `stac_save()` still stamps it from the `collection` it is given.
 - `extract_bbox()` and `new_thumbnail()` are now S3 generics. In addition to a `character` path or URL, both accept a `doc_asset` from `new_asset()`, in which case the raster is read from the asset's resolved `local_path` (see `update_root()`) or its `href`.
+
+## Bug fixes
+
+- `new_properties()` now records `datetime` as `null` (rather than omitting the field) when only a `start_datetime`/`end_datetime` range is supplied, so the written item is valid per the STAC specification, which requires `datetime` to be present.
+- `stac_save()` now warns when an item's own `collection` field differs from the `collection` argument, instead of silently writing the item under its own collection's path. The item's value remains authoritative.
 
 ## Breaking changes
 

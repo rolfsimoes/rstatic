@@ -114,13 +114,25 @@ Items are `GeoJSON Feature`s. Build their `properties` with
 `new_properties()` and `assets` with `new_asset()`; the asset media type is
 deduced from the file extension.
 
+STAC requires every item to carry a `datetime`. This map is an annual
+classification covering the whole of 2022, so it is better described by a
+*range*: pass `start_datetime` and `end_datetime` and leave `datetime` out.
+`new_properties()` then records `datetime` as `null`, exactly as the
+specification mandates for ranged items.
+
+Passing `collection` records the owning collection's id on the item, as STAC
+requires whenever an item links to a collection. It also lets later steps locate
+the item on disk without repeating the collection.
+
 ```{r item}
 item <- new_item(
   id = "land-cover-2022",
   bbox = bbox,
   geometry = geometry,
+  collection = collection,
   properties = new_properties(
-    datetime = "2022-07-16T00:00:00Z",
+    start_datetime = "2022-01-05T00:00:00Z",
+    end_datetime = "2022-12-23T00:00:00Z",
     description = "Example land cover map for 2022"
   ),
   assets = list(
@@ -134,7 +146,8 @@ item
 
 `add_items()` links each item from the collection and updates the collection's
 spatial and temporal extent automatically. It returns the updated collection
-without writing anything on disk.
+without writing anything on disk. The temporal extent picks up the item's
+`start_datetime`/`end_datetime` range, so the interval spans the full year:
 
 ```{r add-items}
 collection <- add_items(collection, item)
@@ -219,11 +232,11 @@ stac_save(catalog = catalog, collection = collection, items = item,
 When a thumbnail was attached, its PNG now exists under the item directory.
 The in-memory asset still carries only the relative `href` `"thumbnail.png"`,
 so `update_root()` re-points it at the rendered file under `root` before
-plotting. It needs the collection because an item does not record which
-collection owns it:
+plotting. Because the item records its own `collection`, that is all
+`update_root()` needs to locate the file:
 
 ```{r thumbnail-plot, eval = has_terra && requireNamespace("png", quietly = TRUE), fig.cap = "Categorical land-cover thumbnail rendered at save time."}
-item <- update_root(item, root, collection)
+item <- update_root(item, root)
 plot(item$assets$thumbnail)
 ```
 
@@ -271,6 +284,7 @@ b04_asset <- new_asset(b04_path, title = "B04 (red)")
 b04_item <- new_item(
   "b04-2022-07-16",
   bbox = extract_bbox(b04_asset),
+  collection = s2_collection,
   properties = new_properties(datetime = "2022-07-16T00:00:00Z"),
   assets = list(data = b04_asset)
 )
@@ -284,7 +298,7 @@ catalog <- add_collection(catalog, s2_collection)
 stac_save(catalog = catalog, collection = s2_collection, items = b04_item,
           root_dir = root)
 
-b04_item <- update_root(b04_item, root, s2_collection)
+b04_item <- update_root(b04_item, root)
 plot(b04_item$assets$thumbnail)
 ```
 

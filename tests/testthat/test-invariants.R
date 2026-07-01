@@ -60,6 +60,22 @@ test_that("chained add_items calls accumulate item links and extent", {
   expect_equal(bbox, c(-50, -12, -47, -9))
 })
 
+test_that("add_items sets the temporal extent from a start/end range", {
+  col <- new_collection("col", "Collection", "Desc")
+  item <- new_item(
+    "i1", bbox = c(-50, -10, -49, -9),
+    properties = new_properties(
+      start_datetime = "2022-01-05T00:00:00Z",
+      end_datetime = "2022-12-23T00:00:00Z"
+    )
+  )
+  col <- add_items(col, item)
+
+  interval <- col$extent$temporal$interval[[1]]
+  expect_equal(interval[[1]], "2022-01-05T00:00:00Z")
+  expect_equal(interval[[2]], "2022-12-23T00:00:00Z")
+})
+
 test_that("add_link appends and dedupes by (rel, href)", {
   cat <- new_catalog("cat", "Catalog", "Desc")
   cat <- add_link(cat, "child", "a.json")

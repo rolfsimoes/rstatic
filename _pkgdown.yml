@@ -19,6 +19,7 @@ reference:
   - add_items
   - add_asset
   - add_link
+  - list_links
 - title: Persistence
   contents:
   - stac_save

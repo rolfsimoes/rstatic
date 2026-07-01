@@ -5,6 +5,8 @@
 - Added `update_root()`, which re-points a document's assets at their on-disk locations under a local root directory, following the canonical static catalog layout. It sets each asset's `local_path` attribute so files written by `stac_save()` -- such as a rendered thumbnail -- can be resolved by `plot()` and other local readers. It is an S3 generic: for a `doc_item` the paths resolve under the item directory (using the item's own `collection` field), and for a `doc_collection` under the collection directory (covering a propagated collection thumbnail).
 - `new_item()` gained an optional `collection` argument (a `doc_collection` or a `character` id) that records the item's top-level `collection` field. STAC requires this field whenever the item links to a collection; when omitted, `stac_save()` still stamps it from the `collection` it is given.
 - `extract_bbox()` and `new_thumbnail()` are now S3 generics. In addition to a `character` path or URL, both accept a `doc_asset` from `new_asset()`, in which case the raster is read from the asset's resolved `local_path` (see `update_root()`) or its `href`.
+- Added `list_links()`, which returns a document's links as a plain `list` and filters them with expressions evaluated against each link, e.g. `list_links(catalog, rel == "child")`. Multiple expressions combine with logical AND; with none, all links are returned.
+- The `print()` methods for `doc_collection` and `doc_item` now summarize spatial and temporal extent. Collections show the union `bbox` and `interval` of their extent; items show their `bbox` and a `datetime` that prefers a `start_datetime`/`end_datetime` range over a single `datetime`. Both now close with a dimmed, complete list of field names.
 
 ## Bug fixes
 

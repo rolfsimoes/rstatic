@@ -51,6 +51,8 @@ Methods dispatch on class.
 
 Public constructors own object invariants.
 
+Name internal (non-exported) functions with a leading dot, e.g. `.write_json()`, `.update_temporal_extent()`. Exported functions carry no dot. The exception is S3 generics and their methods, which follow the `generic.class` convention (e.g. `render_style.rstatic_style_rgb`) with no leading dot, even when internal.
+
 Avoid:
 
 1. Hidden state.

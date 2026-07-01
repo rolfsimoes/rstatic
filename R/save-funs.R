@@ -20,7 +20,9 @@
 #' Documents are written children-first (items, then collection, then catalog)
 #' so a reader following a parent's links always finds the child already on
 #' disk. Items are stamped with the `collection` field from the `collection`
-#' argument when they do not already carry one. Any asset built with
+#' argument when they do not already carry one; an item that already records a
+#' `collection` keeps its own value, and a warning is emitted if that value
+#' differs from the `collection` argument. Any asset built with
 #' [new_thumbnail()] is rendered to a PNG at this point (requires \pkg{terra}).
 #'
 #' @param catalog    An optional `doc_catalog` from [new_catalog()].
@@ -65,6 +67,12 @@ stac_save <- function(catalog = NULL,
                "set the item's `collection` field.", call. = FALSE)
         }
         item$collection <- col_id
+      } else if (!is.null(col_id) && !identical(item$collection, col_id)) {
+        warning(sprintf(
+          paste0("Item '%s' has collection '%s', which differs from the ",
+                 "`collection` argument ('%s'); keeping the item's own value."),
+          item$id, item$collection, col_id
+        ), call. = FALSE)
       }
       .save_item(.as_rstac(item), root_dir)
     }

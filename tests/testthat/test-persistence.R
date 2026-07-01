@@ -27,6 +27,51 @@ test_that("stac_save stamps items with the collection and writes item.json", {
   expect_equal(stac_read(path)$collection, "col")
 })
 
+test_that("a ranged item is written with an explicit null datetime", {
+  dir <- withr::local_tempdir()
+  col <- new_collection("col", "Collection", "Desc")
+  item <- new_item(
+    "i1", bbox = c(-50, -10, -49, -9),
+    properties = new_properties(
+      start_datetime = "2022-01-05T00:00:00Z",
+      end_datetime = "2022-12-23T00:00:00Z"
+    )
+  )
+  stac_save(collection = col, items = item, root_dir = dir)
+
+  raw <- jsonlite::fromJSON(
+    file.path(dir, "stac", "collections", "col", "items", "i1", "item.json"),
+    simplifyVector = FALSE
+  )
+  expect_true("datetime" %in% names(raw$properties))
+  expect_null(raw$properties$datetime)
+  expect_equal(raw$properties$start_datetime, "2022-01-05T00:00:00Z")
+  expect_equal(raw$properties$end_datetime, "2022-12-23T00:00:00Z")
+})
+
+test_that("stac_save warns and keeps the item's collection on a mismatch", {
+  dir <- withr::local_tempdir()
+  col <- new_collection("b", "B", "Desc")
+  item <- new_item("i1", bbox = c(-50, -10, -49, -9), collection = "a")
+
+  expect_warning(
+    stac_save(collection = col, items = item, root_dir = dir),
+    "differs"
+  )
+
+  # The item is written under its own collection ("a"), not the argument ("b").
+  path <- file.path(dir, "stac", "collections", "a", "items", "i1", "item.json")
+  expect_true(file.exists(path))
+  expect_equal(stac_read(path)$collection, "a")
+})
+
+test_that("stac_save does not warn when collections agree", {
+  dir <- withr::local_tempdir()
+  col <- new_collection("a", "A", "Desc")
+  item <- new_item("i1", bbox = c(-50, -10, -49, -9), collection = "a")
+  expect_no_warning(stac_save(collection = col, items = item, root_dir = dir))
+})
+
 test_that("stac_save errors when an item has no collection context", {
   dir <- withr::local_tempdir()
   item <- new_item("i", bbox = c(0, 0, 1, 1))

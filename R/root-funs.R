@@ -1,33 +1,37 @@
-#' @title Resolve an item's asset paths under a local root
+#' @title Resolve a document's asset paths under a local root
 #'
 #' @name update_root
 #'
 #' @description
-#' Returns a copy of an in-memory `doc_item` whose assets point at their
+#' Returns a copy of an in-memory STAC document whose assets point at their
 #' on-disk locations under a local `root_dir`, following the canonical static
-#' catalog layout used by [stac_save()]. For every asset with a relative
-#' `href`, the `local_path` attribute is set to
-#' `root_dir/stac/collections/<collection>/items/<id>/<href>`. Assets whose
-#' `href` is already an absolute path or a URL are returned unchanged.
+#' catalog layout used by [stac_save()]. For every asset with a relative `href`,
+#' the `local_path` attribute is set to the file's location under `root_dir`;
+#' assets whose `href` is already an absolute path or a URL are returned
+#' unchanged.
 #'
-#' `update_root()` is a pure helper: it reads no raster and writes no file. Its
-#' purpose is to make files produced by [stac_save()] -- such as a thumbnail PNG
-#' rendered into the item directory -- resolvable by [plot()] and other local
-#' readers, which consult an asset's `local_path` attribute before falling back
-#' to its `href`.
+#' `update_root()` is generic and dispatches on the document class:
+#' \itemize{
+#'   \item `doc_item`: assets resolve under
+#'     `root_dir/stac/collections/<collection>/items/<id>/`. The collection is
+#'     read from the item's own `collection` field, so build the item with
+#'     `new_item(collection = ...)` (or save it first, which stamps the field).
+#'   \item `doc_collection`: assets resolve under
+#'     `root_dir/stac/collections/<id>/`, which covers a collection-level
+#'     thumbnail propagated from its items.
+#' }
 #'
-#' The `collection` is supplied explicitly because an in-memory item does not
-#' record the collection it belongs to; that field is stamped onto the written
-#' copy by [stac_save()], not onto the item in hand.
+#' It is a pure helper: it reads no raster and writes no file. Its purpose is to
+#' make files produced by [stac_save()] -- such as a thumbnail PNG rendered into
+#' the item directory -- resolvable by [plot()] and other local readers, which
+#' consult an asset's `local_path` attribute before falling back to its `href`.
 #'
-#' @param item       A `doc_item` from [new_item()].
-#' @param root_dir   A `character` directory under which the `stac/` tree was
+#' @param x        A `doc_item` from [new_item()] or a `doc_collection` from
+#'   [new_collection()].
+#' @param root_dir A `character` directory under which the `stac/` tree was
 #'   written by [stac_save()].
-#' @param collection A `doc_collection` from [new_collection()], or a
-#'   `character` collection id. Supplies the collection segment of the item's
-#'   on-disk path.
 #'
-#' @return The `doc_item`, with the `local_path` attribute set on each asset
+#' @return The document `x`, with the `local_path` attribute set on each asset
 #'   that has a relative `href`.
 #'
 #' @examples
@@ -36,47 +40,69 @@
 #' item <- new_item(
 #'   "land-cover-2022",
 #'   bbox = c(-50, -10, -49, -9),
+#'   collection = col,
 #'   assets = list(data = new_asset("data.tif", title = "Data"))
 #' )
 #' stac_save(collection = col, items = item, root_dir = root)
 #'
-#' item <- update_root(item, root, col)
+#' item <- update_root(item, root)
 #' attr(item$assets$data, "local_path")
 #'
 #' @export
-update_root <- function(item, root_dir, collection) {
-  if (!inherits(item, "doc_item")) {
-    stop("`item` must be a `doc_item` object from `new_item()`.",
-         call. = FALSE)
+update_root <- function(x, root_dir) {
+  UseMethod("update_root")
+}
+
+#' @rdname update_root
+#' @export
+update_root.doc_item <- function(x, root_dir) {
+  .check_root_dir(root_dir)
+  if (is.null(x$collection) || !nzchar(x$collection)) {
+    stop("`x` has no `collection` field, so its on-disk path cannot be ",
+         "resolved. Build the item with `new_item(collection = ...)`, or pass ",
+         "it through `stac_save()` first.", call. = FALSE)
   }
+  base_dir <- file.path(
+    root_dir, "stac", "collections", x$collection, "items", x$id
+  )
+  .resolve_asset_paths(x, base_dir)
+}
+
+#' @rdname update_root
+#' @export
+update_root.doc_collection <- function(x, root_dir) {
+  .check_root_dir(root_dir)
+  base_dir <- file.path(root_dir, "stac", "collections", x$id)
+  .resolve_asset_paths(x, base_dir)
+}
+
+#' Set each asset's local_path relative to a base directory
+#'
+#' Assets with a remote or absolute `href` are left untouched.
+#'
+#' @keywords internal
+#' @noRd
+.resolve_asset_paths <- function(doc, base_dir) {
+  for (key in names(doc$assets)) {
+    asset <- doc$assets[[key]]
+    href <- asset$href
+    if (!is.null(href) && !.is_remote_href(href) && !.is_absolute_href(href)) {
+      attr(asset, "local_path") <- file.path(base_dir, href)
+      doc$assets[[key]] <- asset
+    }
+  }
+  .as_rstac(doc)
+}
+
+#' Validate the `root_dir` argument
+#'
+#' @keywords internal
+#' @noRd
+.check_root_dir <- function(root_dir) {
   if (!is.character(root_dir) || length(root_dir) != 1L) {
     stop("`root_dir` must be a single character string.", call. = FALSE)
   }
-  col_id <- if (inherits(collection, "doc_collection")) {
-    collection$id
-  } else {
-    collection
-  }
-  if (!is.character(col_id) || length(col_id) != 1L) {
-    stop("`collection` must be a `doc_collection` object from ",
-         "`new_collection()`, or a single character collection id.",
-         call. = FALSE)
-  }
-
-  item_dir <- file.path(
-    root_dir, "stac", "collections", col_id, "items", item$id
-  )
-
-  for (key in names(item$assets)) {
-    asset <- item$assets[[key]]
-    href <- asset$href
-    if (!is.null(href) && !.is_remote_href(href) && !.is_absolute_href(href)) {
-      attr(asset, "local_path") <- file.path(item_dir, href)
-      item$assets[[key]] <- asset
-    }
-  }
-
-  .as_rstac(item)
+  invisible(root_dir)
 }
 
 #' Test whether an href is a remote URL

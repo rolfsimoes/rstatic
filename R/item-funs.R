@@ -15,8 +15,15 @@
 #'     collection.
 #' }
 #'
+#' STAC requires every item to carry a `datetime`. When you describe a time
+#' range instead of a single instant, supply `start_datetime` and `end_datetime`
+#' and omit `datetime`; `new_properties()` then records `datetime` as `null`, as
+#' the specification mandates. `add_items()` derives the collection's temporal
+#' extent from the range (or from `datetime` when only that is given).
+#'
 #' @param description    A `character` description.
-#' @param datetime       A `character` RFC 3339 datetime, or `NULL`.
+#' @param datetime       A `character` RFC 3339 datetime, or `NULL`. Recorded as
+#'   `null` when omitted alongside a `start_datetime`/`end_datetime` range.
 #' @param start_datetime A `character` RFC 3339 start datetime, or `NULL`.
 #' @param end_datetime   A `character` RFC 3339 end datetime, or `NULL`.
 #' @param start_date     A `character` start date, or `NULL`.
@@ -32,7 +39,12 @@
 #'   `new_properties()`.
 #' @param assets         A named `list` of assets, e.g. from `new_asset()`.
 #' @param stac_version   A `character` STAC version. Defaults to `"1.0.0"`.
-#' @param collection     A `doc_collection` object to add items to.
+#' @param collection     For `add_items()`, the `doc_collection` to link items
+#'   into. For `new_item()`, an optional `doc_collection` or `character`
+#'   collection id recorded as the item's top-level `collection` field. STAC
+#'   requires this field whenever the item carries a `collection` link (as items
+#'   built here always do); when omitted, [stac_save()] stamps it from the
+#'   `collection` it is given.
 #' @param items          A single `doc_item`, or a `list` of `doc_item`
 #'   objects, to link into the collection.
 #' @param ...            Additional named fields. See details for each
@@ -73,7 +85,15 @@ new_properties <- function(description = NULL,
                            ...) {
   props <- list(...)
   if (!is.null(description)) props$description <- description
-  if (!is.null(datetime)) props$datetime <- datetime
+  if (!is.null(datetime)) {
+    props$datetime <- datetime
+  } else if (!is.null(start_datetime) || !is.null(end_datetime) ||
+             !is.null(start_date) || !is.null(end_date)) {
+    # STAC requires `datetime` to be present; it may be null only when a
+    # start/end range is given. `props["datetime"] <- list(NULL)` keeps the
+    # key with a null value (`props$datetime <- NULL` would drop it).
+    props["datetime"] <- list(NULL)
+  }
   if (!is.null(start_datetime)) props$start_datetime <- start_datetime
   if (!is.null(end_datetime)) props$end_datetime <- end_datetime
   if (!is.null(start_date)) props$start_date <- start_date
@@ -109,10 +129,25 @@ new_item <- function(id,
                      geometry = NULL,
                      properties = new_properties(),
                      assets = list(),
+                     collection = NULL,
                      stac_version = "1.0.0",
                      ...) {
   if (is.null(geometry)) {
     geometry <- as_geometry(bbox)
+  }
+
+  col_id <- NULL
+  if (!is.null(collection)) {
+    col_id <- if (inherits(collection, "doc_collection")) {
+      collection$id
+    } else {
+      collection
+    }
+    if (!is.character(col_id) || length(col_id) != 1L) {
+      stop("`collection` must be a `doc_collection` object from ",
+           "`new_collection()`, or a single character collection id.",
+           call. = FALSE)
+    }
   }
 
   extras <- list(...)
@@ -138,6 +173,13 @@ new_item <- function(id,
            type = "application/json")
     )
   )
+
+  # STAC requires the `collection` field whenever a `collection` link is
+  # present (as it always is here). Place it right after `id` when known.
+  if (!is.null(col_id)) {
+    item_data <- append(item_data, list(collection = col_id),
+                        after = which(names(item_data) == "id"))
+  }
 
   .as_rstac(item_data)
 }

@@ -34,6 +34,20 @@ test_that("new_properties only keeps provided values", {
   p <- new_properties(datetime = "2020-01-01T00:00:00Z")
   expect_equal(p$datetime, "2020-01-01T00:00:00Z")
   expect_null(p$start_datetime)
+  # No temporal field at all: datetime stays absent, not null.
+  expect_false("datetime" %in% names(new_properties(description = "x")))
+})
+
+test_that("new_properties records a null datetime for a start/end range", {
+  p <- new_properties(
+    start_datetime = "2022-01-05T00:00:00Z",
+    end_datetime = "2022-12-23T00:00:00Z"
+  )
+  # STAC requires `datetime` to be present, even as null, for ranged items.
+  expect_true("datetime" %in% names(p))
+  expect_null(p$datetime)
+  expect_equal(p$start_datetime, "2022-01-05T00:00:00Z")
+  expect_equal(p$end_datetime, "2022-12-23T00:00:00Z")
 })
 
 test_that("new_item builds a Feature and derives geometry from bbox", {
@@ -46,4 +60,26 @@ test_that("new_item builds a Feature and derives geometry from bbox", {
 test_that("new_item merges dots into properties", {
   item <- new_item("i", bbox = c(0, 0, 1, 1), source = "test")
   expect_equal(item$properties$source, "test")
+})
+
+test_that("new_item records the collection id from an id or a doc_collection", {
+  # No collection: the field is absent.
+  bare <- new_item("i", bbox = c(0, 0, 1, 1))
+  expect_null(bare$collection)
+
+  # From a character id.
+  from_id <- new_item("i", bbox = c(0, 0, 1, 1), collection = "land-cover")
+  expect_equal(from_id$collection, "land-cover")
+
+  # From a doc_collection object.
+  col <- new_collection("land-cover", "Land Cover", "Desc")
+  from_obj <- new_item("i", bbox = c(0, 0, 1, 1), collection = col)
+  expect_equal(from_obj$collection, "land-cover")
+})
+
+test_that("new_item rejects an invalid collection", {
+  expect_error(
+    new_item("i", bbox = c(0, 0, 1, 1), collection = c("a", "b")),
+    "collection"
+  )
 })

@@ -3,7 +3,7 @@ pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   rstatic: rstatic.html
-last_built: 2026-06-27T19:13Z
+last_built: 2026-07-01T12:52Z
 urls:
   reference: https://rolfsimoes.github.io/rstatic/reference
   article: https://rolfsimoes.github.io/rstatic/articles

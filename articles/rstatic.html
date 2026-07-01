@@ -20,7 +20,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">rstatic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -50,8 +50,7 @@
 
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-
-      <h1>Generating a static STAC catalog with rstatic</h1>
+      <img src="../logo.png" class="logo" alt=""><h1>Generating a static STAC catalog with rstatic</h1>
             
       
       <small class="dont-index">Source: <a href="https://github.com/rolfsimoes/rstatic/blob/main/vignettes/rstatic.Rmd" class="external-link"><code>vignettes/rstatic.Rmd</code></a></small>
@@ -78,163 +77,436 @@ version 1.0.0:</p>
 <span>      <span class="va">items</span><span class="op">/</span></span>
 <span>        <span class="op">{</span><span class="va">item</span><span class="op">}</span><span class="op">/</span></span>
 <span>          <span class="va">item.json</span></span></code></pre>
-<p>This vignette walks through building such a tree from scratch. All
-output is written under a temporary directory so the vignette is fully
-self-contained.</p>
+<p>This vignette shows how to build such a tree from scratch. The design
+separates a <strong>pure core</strong> that builds documents in memory
+from a thin <strong>I/O shell</strong>: [stac_save()] is the writer and
+[stac_read()] the reader. Nothing is written until you call
+<code><a href="../reference/stac_save.html">stac_save()</a></code> at the end.</p>
+<p>To be fully self-contained in this vignette, all output is written
+under a temporary directory:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"stac-"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="initialize-the-root-catalog">1. Initialize the root catalog<a class="anchor" aria-label="anchor" href="#initialize-the-root-catalog"></a>
+<h2 id="build-the-root-catalog">1. Build the root catalog<a class="anchor" aria-label="anchor" href="#build-the-root-catalog"></a>
 </h2>
-<p><code><a href="../reference/catalog_functions.html">stac_init()</a></code> creates (or updates) the root
-<code>catalog.json</code>. It preserves any existing <code>child</code>
-links, so it is safe to call repeatedly.</p>
+<p><code><a href="../reference/catalog_functions.html">new_catalog()</a></code> builds the root catalog document.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/catalog_functions.html">stac_init</a></span><span class="op">(</span></span>
-<span>  id <span class="op">=</span> <span class="st">"restore-plus"</span>,</span>
-<span>  title <span class="op">=</span> <span class="st">"Restore+ Catalog"</span>,</span>
-<span>  description <span class="op">=</span> <span class="st">"An example static STAC catalog built with rstatic"</span>,</span>
-<span>  root_dir <span class="op">=</span> <span class="va">root</span></span>
+<code class="sourceCode R"><span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/catalog_functions.html">new_catalog</a></span><span class="op">(</span></span>
+<span>  id <span class="op">=</span> <span class="st">"rstatic-catalog"</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"rstatic package catalog"</span>,</span>
+<span>  description <span class="op">=</span> <span class="st">"An example static STAC catalog built with rstatic"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Catalog restore-plus initialized/updated at /tmp/RtmpJwPN4D/stac-1e3d437ea46a/stac/catalog.json</span></span>
 <span><span class="va">catalog</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;"># STAC Catalog</span> <span style="color: #555555;">restore-plus</span></span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">title      </span>  Restore+ Catalog</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">description</span>  An example static STAC catalog built with rstatic</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">links      </span>  2</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;STAC Catalog: </span><span style="color: #BBBB00;">rstatic-catalog</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">title</span>: rstatic package catalog</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">description</span>: An example static STAC catalog built with rstatic</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">links</span>: 2</span></span></code></pre></div>
 </div>
 <div class="section level2">
-<h2 id="create-and-register-a-collection">2. Create and register a collection<a class="anchor" aria-label="anchor" href="#create-and-register-a-collection"></a>
+<h2 id="create-and-attach-a-collection">2. Create and attach a collection<a class="anchor" aria-label="anchor" href="#create-and-attach-a-collection"></a>
 </h2>
-<p>Collections group related items. <code><a href="../reference/collection_functions.html">new_collection()</a></code> builds
-the document in memory and <code><a href="../reference/collection_functions.html">stac_add_collection()</a></code> persists
-it, links it to the catalog, and returns the updated catalog. Any extra
-named arguments (e.g. <code>citation</code>, <code>doi</code>) are
+<p>In STAC, collections group related items.
+<code><a href="../reference/collection_functions.html">new_collection()</a></code> builds the document and
+<code><a href="../reference/collection_functions.html">add_collection()</a></code> registers it as a <code>child</code> of
+the catalog, returning the updated catalog. No files are written. Any
+extra named arguments (e.g. <code>citation</code>, <code>doi</code>) are
 stored as additional collection fields.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/collection_functions.html">new_collection</a></span><span class="op">(</span></span>
 <span>  id <span class="op">=</span> <span class="st">"land-cover"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Example Land Cover"</span>,</span>
-<span>  description <span class="op">=</span> <span class="st">"Annual land cover maps (example data)"</span>,</span>
+<span>  description <span class="op">=</span> <span class="st">"Annual land cover map (example data)"</span>,</span>
 <span>  license <span class="op">=</span> <span class="st">"CC-BY-4.0"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/collection_functions.html">stac_add_collection</a></span><span class="op">(</span><span class="va">catalog</span>, collection <span class="op">=</span> <span class="va">collection</span>, root_dir <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Collection land-cover added to Catalog.</span></span>
+<span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/collection_functions.html">add_collection</a></span><span class="op">(</span><span class="va">catalog</span>, <span class="va">collection</span><span class="op">)</span></span>
 <span><span class="va">collection</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;"># STAC Collection</span> <span style="color: #555555;">land-cover</span></span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">title      </span>  Example Land Cover</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">description</span>  Annual land cover maps (example data)</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">license    </span>  CC-BY-4.0</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">links      </span>  3</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;STAC Collection: </span><span style="color: #BBBB00;">land-cover</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">title</span>: Example Land Cover</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">description</span>: Annual land cover map (example data)</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">license</span>: CC-BY-4.0</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">links</span>: 3</span></span>
+<span><span class="co">#&gt; <span style="font-weight: 100;">  fields: description, extent, id, license, links, stac_version, title, type</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="spatial-metadata">3. Spatial metadata<a class="anchor" aria-label="anchor" href="#spatial-metadata"></a>
 </h2>
 <p>If <a href="https://rspatial.github.io/terra/" class="external-link">terra</a> is
 installed, <code><a href="../reference/geom_functions.html">extract_bbox()</a></code> reads a raster and returns its
-bounding box in WGS84. A small Sentinel-2 subset ships with the package
-for demonstration.</p>
+bounding box in WGS84. When <code>terra</code> is not available, you can
+pass a bounding box directly.</p>
+<p>A small Sentinel-2 subset ships with the package for
+demonstration.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">tif</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/example.tif"</span>, package <span class="op">=</span> <span class="st">"rstatic"</span><span class="op">)</span></span>
-<span><span class="va">bbox</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geom_functions.html">extract_bbox</a></span><span class="op">(</span><span class="va">tif</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">tif_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
+<span>  <span class="st">"extdata/lulc/S2_MSI_20LMR_2022-01-05_2022-12-23_class_v1.tif"</span>,</span>
+<span>  package <span class="op">=</span> <span class="st">"rstatic"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">bbox</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geom_functions.html">extract_bbox</a></span><span class="op">(</span><span class="va">tif_path</span><span class="op">)</span></span>
 <span><span class="va">bbox</span></span>
 <span><span class="co">#&gt;       xmin       ymin       xmax       ymax </span></span>
-<span><span class="co">#&gt; -63.636579  -8.630220 -63.450282  -8.491029</span></span></code></pre></div>
-<p>When <code>terra</code> is not available, you can pass a bounding box
-directly. The <code><a href="../reference/geom_functions.html">as_geometry()</a></code> helper turns a bounding box
-into a GeoJSON polygon and has no external dependencies:</p>
+<span><span class="co">#&gt; -63.636579  -8.630257 -63.418217  -8.412882</span></span></code></pre></div>
+<p>The <code><a href="../reference/geom_functions.html">as_geometry()</a></code> helper turns a bounding box into a
+<code>GeoJSON polygon</code> and has no external dependencies:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">bbox</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">50</span>, <span class="op">-</span><span class="fl">10</span>, <span class="op">-</span><span class="fl">49</span>, <span class="op">-</span><span class="fl">9</span><span class="op">)</span></span>
+<code class="sourceCode R"><span><span class="va">bbox</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">63.63658</span>, <span class="op">-</span><span class="fl">8.630256</span>, <span class="op">-</span><span class="fl">63.41822</span>, <span class="op">-</span><span class="fl">8.412882</span><span class="op">)</span></span>
 <span><span class="va">geometry</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/geom_functions.html">as_geometry</a></span><span class="op">(</span><span class="va">bbox</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">geometry</span>, max.level <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span>
-<span><span class="co">#&gt; List of 2</span></span>
-<span><span class="co">#&gt;  $ type       : chr "Polygon"</span></span>
-<span><span class="co">#&gt;  $ coordinates:List of 1</span></span>
-<span><span class="co">#&gt;   ..$ :List of 5</span></span></code></pre></div>
+<span><span class="va">geometry</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;GeoJSON Geometry: </span><span style="color: #BBBB00;">Polygon</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">bbox</span>: -63.636580, -8.630256, -63.418220, -8.412882</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="build-items">4. Build items<a class="anchor" aria-label="anchor" href="#build-items"></a>
 </h2>
-<p>Items are GeoJSON <code>Feature</code>s. Build their
+<p>Items are <code>GeoJSON Feature</code>s. Build their
 <code>properties</code> with <code><a href="../reference/item_functions.html">new_properties()</a></code> and
 <code>assets</code> with <code><a href="../reference/item_functions.html">new_asset()</a></code>; the asset media type
 is deduced from the file extension.</p>
+<p>STAC requires every item to carry a <code>datetime</code>. This map
+is an annual classification covering the whole of 2022, so it is better
+described by a <em>range</em>: pass <code>start_datetime</code> and
+<code>end_datetime</code> and leave <code>datetime</code> out.
+<code><a href="../reference/item_functions.html">new_properties()</a></code> then records <code>datetime</code> as
+<code>null</code>, exactly as the specification mandates for ranged
+items.</p>
+<p>Passing <code>collection</code> records the owning collection’s id on
+the item, as STAC requires whenever an item links to a collection. It
+also lets later steps locate the item on disk without repeating the
+collection.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">item</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_functions.html">new_item</a></span><span class="op">(</span></span>
-<span>  id <span class="op">=</span> <span class="st">"land-cover-2020"</span>,</span>
+<span>  id <span class="op">=</span> <span class="st">"land-cover-2022"</span>,</span>
 <span>  bbox <span class="op">=</span> <span class="va">bbox</span>,</span>
 <span>  geometry <span class="op">=</span> <span class="va">geometry</span>,</span>
+<span>  collection <span class="op">=</span> <span class="va">collection</span>,</span>
 <span>  properties <span class="op">=</span> <span class="fu"><a href="../reference/item_functions.html">new_properties</a></span><span class="op">(</span></span>
-<span>    datetime <span class="op">=</span> <span class="st">"2020-01-01T00:00:00Z"</span>,</span>
-<span>    description <span class="op">=</span> <span class="st">"Example land cover map for 2020"</span></span>
+<span>    start_datetime <span class="op">=</span> <span class="st">"2022-01-05T00:00:00Z"</span>,</span>
+<span>    end_datetime <span class="op">=</span> <span class="st">"2022-12-23T00:00:00Z"</span>,</span>
+<span>    description <span class="op">=</span> <span class="st">"Example land cover map for 2022"</span></span>
 <span>  <span class="op">)</span>,</span>
 <span>  assets <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    data <span class="op">=</span> <span class="fu"><a href="../reference/item_functions.html">new_asset</a></span><span class="op">(</span><span class="st">"land-cover-2020.tif"</span>, title <span class="op">=</span> <span class="st">"Land Cover 2020"</span><span class="op">)</span></span>
+<span>    data <span class="op">=</span> <span class="fu"><a href="../reference/item_functions.html">new_asset</a></span><span class="op">(</span><span class="va">tif_path</span>, title <span class="op">=</span> <span class="st">"Land Cover 2022"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">item</span></span>
-<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;"># STAC Item</span> <span style="color: #555555;">land-cover-2020</span></span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">bbox    </span>  -50, -10, -49, -9</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">datetime</span>  2020-01-01T00:00:00Z</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">assets  </span>  data</span></span>
-<span><span class="co">#&gt;   <span style="color: #555555;">links   </span>  4</span></span></code></pre></div>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;STAC Item: </span><span style="color: #BBBB00;">land-cover-2022</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">collection</span>: land-cover</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">bbox</span>: -63.636580, -8.630256, -63.418220, -8.412882</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">datetime</span>: 2022-01-05T00:00:00Z / 2022-12-23T00:00:00Z</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">assets</span>: data</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">links</span>: 4</span></span>
+<span><span class="co">#&gt; <span style="font-weight: 100;">  fields: assets, bbox, collection, geometry, id, links, properties, stac_version, type</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="add-items-to-the-collection">5. Add items to the collection<a class="anchor" aria-label="anchor" href="#add-items-to-the-collection"></a>
 </h2>
-<p><code><a href="../reference/item_functions.html">stac_add_items()</a></code> writes each item, links it from the
-collection, and updates the collection’s spatial and temporal extent
-automatically.</p>
+<p><code><a href="../reference/item_functions.html">add_items()</a></code> links each item from the collection and
+updates the collection’s spatial and temporal extent automatically. It
+returns the updated collection without writing anything on disk. The
+temporal extent picks up the item’s
+<code>start_datetime</code>/<code>end_datetime</code> range, so the
+interval spans the full year:</p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_functions.html">stac_add_items</a></span><span class="op">(</span><span class="va">collection</span>, <span class="va">item</span>, root_dir <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Added 1 item(s) to collection land-cover.</span></span>
-<span><span class="va">collection</span><span class="op">$</span><span class="va">extent</span><span class="op">$</span><span class="va">spatial</span><span class="op">$</span><span class="va">bbox</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [1] -50 -10 -49  -9</span></span>
-<span><span class="va">collection</span><span class="op">$</span><span class="va">extent</span><span class="op">$</span><span class="va">temporal</span><span class="op">$</span><span class="va">interval</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="co">#&gt; [[1]]</span></span>
-<span><span class="co">#&gt; [1] "2020-01-01T00:00:00Z"</span></span>
-<span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; [[2]]</span></span>
-<span><span class="co">#&gt; [1] "2020-01-01T00:00:00Z"</span></span></code></pre></div>
+<code class="sourceCode R"><span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_functions.html">add_items</a></span><span class="op">(</span><span class="va">collection</span>, <span class="va">item</span><span class="op">)</span></span>
+<span><span class="va">collection</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;STAC Collection: </span><span style="color: #BBBB00;">land-cover</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">title</span>: Example Land Cover</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">description</span>: Annual land cover map (example data)</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">license</span>: CC-BY-4.0</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">bbox</span>: -63.636580, -8.630256, -63.418220, -8.412882</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">interval</span>: 2022-01-05T00:00:00Z / 2022-12-23T00:00:00Z</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">links</span>: 4</span></span>
+<span><span class="co">#&gt; <span style="font-weight: 100;">  fields: description, extent, id, license, links, stac_version, title, type</span></span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="thumbnails-and-styles-optional">6. Thumbnails and styles (optional)<a class="anchor" aria-label="anchor" href="#thumbnails-and-styles-optional"></a>
 </h2>
-<p>With <code>terra</code>, <code><a href="../reference/new_thumbnail.html">new_thumbnail()</a></code> renders a PNG
-preview. Styles can be built explicitly with <code><a href="../reference/style_functions.html">stac_style()</a></code>
-or parsed from a QGIS <code>.qml</code> file with
-<code><a href="../reference/style_functions.html">qml_to_style()</a></code> (requires <code>xml2</code>).</p>
+<p><code><a href="../reference/new_thumbnail.html">new_thumbnail()</a></code> describes a <code>PNG</code> preview to
+render from a raster. It is a pure builder: it reads no raster and
+writes no file. It returns a STAC asset (like <code><a href="../reference/item_functions.html">new_asset()</a></code>)
+carrying the render <em>intent</em> (the source raster, width, and
+style), which <code><a href="../reference/stac_save.html">stac_save()</a></code> materializes later, when the
+owning item is written. A <code><a href="../reference/stac_style.html">stac_style()</a></code> object describes how
+raster values map to thumbnail pixels; it only validates and normalizes
+the rendering intent.</p>
+<p>The LULC raster shipped with the package
+(<code>S2_MSI_20LMR_2022-01-05_2022-12-23_class_v1.tif</code>) is a
+single-band <code>GeoTIFF</code> classification map for 2022, derived
+from a Sentinel-2 L2A data cube over tile <code>20LMR</code> in Rondônia
+state, Brazil. Each pixel holds an integer class from 1 to 9, with 0
+marking nodata. The data cube and training points are available in the
+<a href="https://github.com/e-sensing/sitsdata" class="external-link"><code>sitsdata</code></a>
+repository.</p>
+<p>The style type is inferred from the parameters rather than chosen
+explicitly. Supplying <code>values</code> and <code>colors</code>
+produces a categorical style, suitable for a land-cover map where each
+integer class has its own color:</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">style</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/style_functions.html">stac_style</a></span><span class="op">(</span>min <span class="op">=</span> <span class="fl">0</span>, max <span class="op">=</span> <span class="fl">255</span>, palette <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"black"</span>, <span class="st">"white"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">style</span><span class="op">$</span><span class="va">type</span></span>
-<span><span class="co">#&gt; [1] "simple"</span></span></code></pre></div>
-<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">thumb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/new_thumbnail.html">new_thumbnail</a></span><span class="op">(</span></span>
-<span>  collection_id <span class="op">=</span> <span class="st">"land-cover"</span>,</span>
-<span>  item_id <span class="op">=</span> <span class="st">"land-cover-2020"</span>,</span>
-<span>  asset_href <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/example.tif"</span>, package <span class="op">=</span> <span class="st">"rstatic"</span><span class="op">)</span>,</span>
-<span>  width <span class="op">=</span> <span class="fl">200</span>,</span>
-<span>  style <span class="op">=</span> <span class="va">style</span>,</span>
-<span>  root_dir <span class="op">=</span> <span class="va">root</span></span>
+<code class="sourceCode R"><span><span class="va">land_cover_style</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stac_style.html">stac_style</a></span><span class="op">(</span></span>
+<span>  values <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">2</span>, <span class="fl">3</span>, <span class="fl">4</span>, <span class="fl">5</span>, <span class="fl">6</span>, <span class="fl">7</span>, <span class="fl">8</span>, <span class="fl">9</span><span class="op">)</span>,</span>
+<span>  colors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"#F39C12"</span>, <span class="st">"#CD6155"</span>, <span class="st">"#E0DB34"</span>, <span class="st">"#1E8449"</span>, <span class="st">"#229C59"</span>,</span>
+<span>             <span class="st">"#00B29E"</span>, <span class="st">"#3ABABA"</span>, <span class="st">"#2980B9"</span>, <span class="st">"#A0B9C8"</span><span class="op">)</span>,</span>
+<span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Clear_Cut_Bare_Soil"</span>, <span class="st">"Clear_Cut_Burned_Area"</span>,</span>
+<span>             <span class="st">"Clear_Cut_Vegetation"</span>, <span class="st">"Forest"</span>, <span class="st">"Mountainside_Forest"</span>,</span>
+<span>             <span class="st">"Riparian_Forest"</span>, <span class="st">"Seasonally_Flooded"</span>, <span class="st">"Water"</span>, <span class="st">"Wetland"</span><span class="op">)</span>,</span>
+<span>  nodata <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">thumb</span><span class="op">)</span></span></code></pre></div>
+<span><span class="va">land_cover_style</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;Style: </span><span style="color: #BBBB00;">categorical</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">labels</span>: Clear_Cut_Bare_Soil, Clear_Cut_Burned_Area, Clear_Cut_Vegetation, Fore... (9)</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">nodata</span>: 0</span></span></code></pre></div>
+<p><code><a href="../reference/qml_to_style.html">qml_to_style()</a></code> reads a supported QGIS <code>.qml</code>
+raster style and returns the same kind of object as
+<code><a href="../reference/stac_style.html">stac_style()</a></code> (it requires <code>xml2</code>). The QML
+shipped alongside the LULC raster is a <em>paletted</em> style, so it
+converts to an equivalent categorical style:</p>
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">qml_style</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/qml_to_style.html">qml_to_style</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/lulc/S2_MSI_20LMR_2022-01-05_2022-12-23_class_v1.qml"</span>,</span>
+<span>              package <span class="op">=</span> <span class="st">"rstatic"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">qml_style</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;Style: </span><span style="color: #BBBB00;">categorical</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">labels</span>: Clear_Cut_Bare_Soil, Clear_Cut_Burned_Area, Clear_Cut_Vegetation, Fore... (9)</span></span></code></pre></div>
+<p><code><a href="../reference/new_thumbnail.html">new_thumbnail()</a></code> accepts either a raster path or a
+<code>doc_asset</code>, so we derive the thumbnail straight from the
+item’s <code>data</code> asset. Attach the intent under the
+<code>"thumbnail"</code> key, then add the updated item to the
+collection. No raster is touched yet. The <code>PNG</code> is rendered
+at save time, which requires <code>terra</code>, so we only attach it
+when <code>terra</code> is available:</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">thumb</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/new_thumbnail.html">new_thumbnail</a></span><span class="op">(</span></span>
+<span>  <span class="va">item</span><span class="op">$</span><span class="va">assets</span><span class="op">$</span><span class="va">data</span>,</span>
+<span>  width <span class="op">=</span> <span class="fl">400</span>,</span>
+<span>  style <span class="op">=</span> <span class="va">land_cover_style</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">item</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_asset.html">add_asset</a></span><span class="op">(</span><span class="va">item</span>, <span class="st">"thumbnail"</span>, <span class="va">thumb</span><span class="op">)</span></span>
+<span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_functions.html">add_items</a></span><span class="op">(</span><span class="va">collection</span>, <span class="va">item</span><span class="op">)</span></span></code></pre></div>
+</div>
+<div class="section level2">
+<h2 id="save-the-catalog">7. Save the catalog<a class="anchor" aria-label="anchor" href="#save-the-catalog"></a>
+</h2>
+<p>So far nothing has been written. <code><a href="../reference/stac_save.html">stac_save()</a></code> is the only
+writer: it persists exactly the documents you hand it. It is a pure
+overwrite, with no implicit reads or merges, and renders any thumbnail
+intent into the item’s directory. Documents are written children-first
+(items, then collection, then catalog).</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/stac_save.html">stac_save</a></span><span class="op">(</span>catalog <span class="op">=</span> <span class="va">catalog</span>, collection <span class="op">=</span> <span class="va">collection</span>, items <span class="op">=</span> <span class="va">item</span>,</span>
+<span>          root_dir <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span></code></pre></div>
+<p>When a thumbnail was attached, its PNG now exists under the item
+directory. The in-memory asset still carries only the relative
+<code>href</code> <code>"thumbnail.png"</code>, so
+<code><a href="../reference/update_root.html">update_root()</a></code> re-points it at the rendered file under
+<code>root</code> before plotting:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">item</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/update_root.html">update_root</a></span><span class="op">(</span><span class="va">item</span>, <span class="va">root</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">item</span><span class="op">$</span><span class="va">assets</span><span class="op">$</span><span class="va">thumbnail</span><span class="op">)</span></span></code></pre></div>
 <div class="figure">
-<img src="rstatic_files/figure-html/thumbnail-1.png" class="r-plt" alt="Rendered thumbnail for the land-cover-2020 item." width="700"><p class="caption">
-Rendered thumbnail for the land-cover-2020 item.
+<img src="rstatic_files/figure-html/thumbnail-plot-1.png" class="r-plt" alt="Categorical land-cover thumbnail rendered at save time." width="700"><p class="caption">
+Categorical land-cover thumbnail rendered at save time.
 </p>
 </div>
+</div>
+<div class="section level2">
+<h2 id="visualizing-a-continuous-band">8. Visualizing a continuous band<a class="anchor" aria-label="anchor" href="#visualizing-a-continuous-band"></a>
+</h2>
+<p>The same machinery renders continuous rasters. The package also ships
+a single Sentinel-2 L2A band
+(<code>S2_MSI_20LMR_B04_2022-07-16.tif</code>): the red band (B04) of
+tile <code>20LMR</code>, acquired on 16 July 2022. Its pixels are
+surface-reflectance values scaled to integers (x1000, roughly 190-1400
+over this scene).</p>
+<p>With neither <code>values</code>/<code>colors</code> nor three
+<code>bands</code>, <code><a href="../reference/stac_style.html">stac_style()</a></code> infers a
+<em>continuous</em> style. A <code>grayscale</code> ramp stretches the
+reflectance range between black and white:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">b04_path</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span></span>
+<span>  <span class="st">"extdata/s2/S2_MSI_20LMR_B04_2022-07-16.tif"</span>,</span>
+<span>  package <span class="op">=</span> <span class="st">"rstatic"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/stac_style.html">stac_style</a></span><span class="op">(</span>min <span class="op">=</span> <span class="fl">192</span>, max <span class="op">=</span> <span class="fl">1371</span>, palette <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"black"</span>, <span class="st">"white"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;Style: </span><span style="color: #BBBB00;">continuous</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">stretch</span>: min=192, max=1371</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">palette</span>: black, white</span></span></code></pre></div>
+<p>The matching QML is a single-band pseudocolor style, which
+<code><a href="../reference/qml_to_style.html">qml_to_style()</a></code> converts to a continuous color ramp:</p>
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">b04_style</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/qml_to_style.html">qml_to_style</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata/s2/S2_MSI_20LMR_B04_2022-07-16.qml"</span>, package <span class="op">=</span> <span class="st">"rstatic"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">b04_style</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;Style: </span><span style="color: #BBBB00;">continuous</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">stretch</span>: min=192, max=1371</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">palette</span>: #30123b, #28bceb, #a4fc3c, #fb7e21, #7a0403</span></span></code></pre></div>
+<p>To preview the band as part of the same catalog, give it its own
+collection, add the item, and link the collection into the catalog.
+Everything is saved under the shared <code>root</code>, alongside the
+land-cover collection. We build the item around a <code>data</code>
+asset, so the same asset feeds both <code><a href="../reference/geom_functions.html">extract_bbox()</a></code> and
+<code><a href="../reference/new_thumbnail.html">new_thumbnail()</a></code>. Then resolve the rendered PNG with
+<code><a href="../reference/update_root.html">update_root()</a></code> and plot it:</p>
+<div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">s2_collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/collection_functions.html">new_collection</a></span><span class="op">(</span></span>
+<span>  <span class="st">"sentinel-2-l2a"</span>, <span class="st">"Sentinel-2 L2A"</span>, <span class="st">"Single-band reflectance preview"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">b04_asset</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_functions.html">new_asset</a></span><span class="op">(</span><span class="va">b04_path</span>, title <span class="op">=</span> <span class="st">"B04 (red)"</span><span class="op">)</span></span>
+<span><span class="va">b04_item</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_functions.html">new_item</a></span><span class="op">(</span></span>
+<span>  <span class="st">"b04-2022-07-16"</span>,</span>
+<span>  bbox <span class="op">=</span> <span class="fu"><a href="../reference/geom_functions.html">extract_bbox</a></span><span class="op">(</span><span class="va">b04_asset</span><span class="op">)</span>,</span>
+<span>  collection <span class="op">=</span> <span class="va">s2_collection</span>,</span>
+<span>  properties <span class="op">=</span> <span class="fu"><a href="../reference/item_functions.html">new_properties</a></span><span class="op">(</span>datetime <span class="op">=</span> <span class="st">"2022-07-16T00:00:00Z"</span><span class="op">)</span>,</span>
+<span>  assets <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>data <span class="op">=</span> <span class="va">b04_asset</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">b04_item</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/add_asset.html">add_asset</a></span><span class="op">(</span></span>
+<span>  <span class="va">b04_item</span>, <span class="st">"thumbnail"</span>,</span>
+<span>  <span class="fu"><a href="../reference/new_thumbnail.html">new_thumbnail</a></span><span class="op">(</span><span class="va">b04_item</span><span class="op">$</span><span class="va">assets</span><span class="op">$</span><span class="va">data</span>, width <span class="op">=</span> <span class="fl">400</span>, style <span class="op">=</span> <span class="va">b04_style</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">s2_collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/item_functions.html">add_items</a></span><span class="op">(</span><span class="va">s2_collection</span>, <span class="va">b04_item</span><span class="op">)</span></span>
+<span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/collection_functions.html">add_collection</a></span><span class="op">(</span><span class="va">catalog</span>, <span class="va">s2_collection</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/stac_save.html">stac_save</a></span><span class="op">(</span>catalog <span class="op">=</span> <span class="va">catalog</span>, collection <span class="op">=</span> <span class="va">s2_collection</span>, items <span class="op">=</span> <span class="va">b04_item</span>,</span>
+<span>          root_dir <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">b04_item</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/update_root.html">update_root</a></span><span class="op">(</span><span class="va">b04_item</span>, <span class="va">root</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">b04_item</span><span class="op">$</span><span class="va">assets</span><span class="op">$</span><span class="va">thumbnail</span><span class="op">)</span></span></code></pre></div>
+<div class="figure">
+<img src="rstatic_files/figure-html/b04-plot-1.png" class="r-plt" alt="Pseudocolor stretch of the Sentinel-2 B04 (red) band." width="700"><p class="caption">
+Pseudocolor stretch of the Sentinel-2 B04 (red) band.
+</p>
+</div>
+</div>
+<div class="section level2">
+<h2 id="update-a-catalog-already-on-disk">9. Update a catalog already on disk<a class="anchor" aria-label="anchor" href="#update-a-catalog-already-on-disk"></a>
+</h2>
+<p>To add to a catalog that is already persisted (typically from a
+<em>separate</em> script populating the same catalog over time) read it
+back, build in memory, and save again. Because <code><a href="../reference/stac_save.html">stac_save()</a></code>
+never merges implicitly, reading first is what preserves the children
+already registered on disk:</p>
+<div class="sourceCode" id="cb18"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stac_read.html">stac_read</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"stac"</span>, <span class="st">"catalog.json"</span><span class="op">)</span>,</span>
+<span>  default <span class="op">=</span> <span class="fu"><a href="../reference/catalog_functions.html">new_catalog</a></span><span class="op">(</span><span class="st">"restore-plus"</span>, <span class="st">"Restore+ Catalog"</span>, <span class="st">"..."</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">deforestation</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/collection_functions.html">new_collection</a></span><span class="op">(</span></span>
+<span>  id <span class="op">=</span> <span class="st">"deforestation"</span>,</span>
+<span>  title <span class="op">=</span> <span class="st">"Example Deforestation"</span>,</span>
+<span>  description <span class="op">=</span> <span class="st">"A second collection added in a later run"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/collection_functions.html">add_collection</a></span><span class="op">(</span><span class="va">catalog</span>, <span class="va">deforestation</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/stac_save.html">stac_save</a></span><span class="op">(</span>catalog <span class="op">=</span> <span class="va">catalog</span>, collection <span class="op">=</span> <span class="va">deforestation</span>, root_dir <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># The catalog now links every collection (land-cover, sentinel-2-l2a,</span></span>
+<span><span class="co"># and deforestation). `list_links()` filters by any link field.</span></span>
+<span><span class="fu"><a href="../reference/list_links.html">list_links</a></span><span class="op">(</span><span class="va">catalog</span>, <span class="va">rel</span> <span class="op">==</span> <span class="st">"child"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; [[1]]</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;STAC Link: </span><span style="color: #BBBB00;">child</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">href</span>: collections/land-cover/collection.json</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">type</span>: application/json</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">title</span>: Example Land Cover</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [[2]]</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;STAC Link: </span><span style="color: #BBBB00;">child</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">href</span>: collections/sentinel-2-l2a/collection.json</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">type</span>: application/json</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">title</span>: Sentinel-2 L2A</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; [[3]]</span></span>
+<span><span class="co">#&gt; <span style="color: #00BBBB; font-weight: bold;">&lt;STAC Link: </span><span style="color: #BBBB00;">child</span><span style="color: #00BBBB; font-weight: bold;">&gt;</span></span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">href</span>: collections/deforestation/collection.json</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">type</span>: application/json</span></span>
+<span><span class="co">#&gt;   <span style="color: #555555;">title</span>: Example Deforestation</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="resulting-catalog">Resulting catalog<a class="anchor" aria-label="anchor" href="#resulting-catalog"></a>
 </h2>
 <p>The final directory tree contains the linked JSON documents:</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"stac"</span><span class="op">)</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; [1] "catalog.json"                                              </span></span>
-<span><span class="co">#&gt; [2] "collections/land-cover/collection.json"                    </span></span>
-<span><span class="co">#&gt; [3] "collections/land-cover/items/land-cover-2020/item.json"    </span></span>
-<span><span class="co">#&gt; [4] "collections/land-cover/items/land-cover-2020/thumbnail.png"</span></span></code></pre></div>
+<span><span class="co">#&gt; [1] "catalog.json"                                                 </span></span>
+<span><span class="co">#&gt; [2] "collections/deforestation/collection.json"                    </span></span>
+<span><span class="co">#&gt; [3] "collections/land-cover/collection.json"                       </span></span>
+<span><span class="co">#&gt; [4] "collections/land-cover/items/land-cover-2022/item.json"       </span></span>
+<span><span class="co">#&gt; [5] "collections/land-cover/items/land-cover-2022/thumbnail.png"   </span></span>
+<span><span class="co">#&gt; [6] "collections/sentinel-2-l2a/collection.json"                   </span></span>
+<span><span class="co">#&gt; [7] "collections/sentinel-2-l2a/items/b04-2022-07-16/item.json"    </span></span>
+<span><span class="co">#&gt; [8] "collections/sentinel-2-l2a/items/b04-2022-07-16/thumbnail.png"</span></span></code></pre></div>
+<p>Each file is a self-contained STAC document. For example, the
+item:</p>
+<div class="sourceCode" id="cb20"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/cat.html" class="external-link">cat</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/readLines.html" class="external-link">readLines</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"stac"</span>, <span class="st">"collections"</span>, <span class="st">"land-cover"</span>,</span>
+<span>            <span class="st">"items"</span>, <span class="st">"land-cover-2022"</span>, <span class="st">"item.json"</span><span class="op">)</span></span>
+<span><span class="op">)</span>, sep <span class="op">=</span> <span class="st">"\n"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; {</span></span>
+<span><span class="co">#&gt;   "stac_version": "1.0.0",</span></span>
+<span><span class="co">#&gt;   "type": "Feature",</span></span>
+<span><span class="co">#&gt;   "id": "land-cover-2022",</span></span>
+<span><span class="co">#&gt;   "collection": "land-cover",</span></span>
+<span><span class="co">#&gt;   "bbox": [-63.6366, -8.6303, -63.4182, -8.4129],</span></span>
+<span><span class="co">#&gt;   "geometry": {</span></span>
+<span><span class="co">#&gt;     "type": "Polygon",</span></span>
+<span><span class="co">#&gt;     "coordinates": [</span></span>
+<span><span class="co">#&gt;       [</span></span>
+<span><span class="co">#&gt;         [-63.6366, -8.6303],</span></span>
+<span><span class="co">#&gt;         [-63.4182, -8.6303],</span></span>
+<span><span class="co">#&gt;         [-63.4182, -8.4129],</span></span>
+<span><span class="co">#&gt;         [-63.6366, -8.4129],</span></span>
+<span><span class="co">#&gt;         [-63.6366, -8.6303]</span></span>
+<span><span class="co">#&gt;       ]</span></span>
+<span><span class="co">#&gt;     ]</span></span>
+<span><span class="co">#&gt;   },</span></span>
+<span><span class="co">#&gt;   "properties": {</span></span>
+<span><span class="co">#&gt;     "description": "Example land cover map for 2022",</span></span>
+<span><span class="co">#&gt;     "datetime": null,</span></span>
+<span><span class="co">#&gt;     "start_datetime": "2022-01-05T00:00:00Z",</span></span>
+<span><span class="co">#&gt;     "end_datetime": "2022-12-23T00:00:00Z"</span></span>
+<span><span class="co">#&gt;   },</span></span>
+<span><span class="co">#&gt;   "assets": {</span></span>
+<span><span class="co">#&gt;     "data": {</span></span>
+<span><span class="co">#&gt;       "href": "/home/runner/work/_temp/Library/rstatic/extdata/lulc/S2_MSI_20LMR_2022-01-05_2022-12-23_class_v1.tif",</span></span>
+<span><span class="co">#&gt;       "type": "image/tiff; application=geotiff",</span></span>
+<span><span class="co">#&gt;       "roles": [</span></span>
+<span><span class="co">#&gt;         "data"</span></span>
+<span><span class="co">#&gt;       ],</span></span>
+<span><span class="co">#&gt;       "title": "Land Cover 2022"</span></span>
+<span><span class="co">#&gt;     },</span></span>
+<span><span class="co">#&gt;     "thumbnail": {</span></span>
+<span><span class="co">#&gt;       "href": "thumbnail.png",</span></span>
+<span><span class="co">#&gt;       "type": "image/png",</span></span>
+<span><span class="co">#&gt;       "roles": [</span></span>
+<span><span class="co">#&gt;         "thumbnail"</span></span>
+<span><span class="co">#&gt;       ],</span></span>
+<span><span class="co">#&gt;       "title": "Thumbnail"</span></span>
+<span><span class="co">#&gt;     }</span></span>
+<span><span class="co">#&gt;   },</span></span>
+<span><span class="co">#&gt;   "links": [</span></span>
+<span><span class="co">#&gt;     {</span></span>
+<span><span class="co">#&gt;       "rel": "self",</span></span>
+<span><span class="co">#&gt;       "href": "item.json",</span></span>
+<span><span class="co">#&gt;       "type": "application/json"</span></span>
+<span><span class="co">#&gt;     },</span></span>
+<span><span class="co">#&gt;     {</span></span>
+<span><span class="co">#&gt;       "rel": "root",</span></span>
+<span><span class="co">#&gt;       "href": "../../../../catalog.json",</span></span>
+<span><span class="co">#&gt;       "type": "application/json"</span></span>
+<span><span class="co">#&gt;     },</span></span>
+<span><span class="co">#&gt;     {</span></span>
+<span><span class="co">#&gt;       "rel": "parent",</span></span>
+<span><span class="co">#&gt;       "href": "../../collection.json",</span></span>
+<span><span class="co">#&gt;       "type": "application/json"</span></span>
+<span><span class="co">#&gt;     },</span></span>
+<span><span class="co">#&gt;     {</span></span>
+<span><span class="co">#&gt;       "rel": "collection",</span></span>
+<span><span class="co">#&gt;       "href": "../../collection.json",</span></span>
+<span><span class="co">#&gt;       "type": "application/json"</span></span>
+<span><span class="co">#&gt;     }</span></span>
+<span><span class="co">#&gt;   ]</span></span>
+<span><span class="co">#&gt; }</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

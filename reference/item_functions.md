@@ -1,6 +1,9 @@
 # Create STAC items, properties, and assets
 
-Functions to build the building blocks of a STAC `Item`.
+Pure builders for the building blocks of a STAC `Item`. None touch disk;
+use
+[`stac_save()`](https://rolfsimoes.github.io/rstatic/reference/stac_save.md)
+to persist.
 
 - `new_properties()`: assembles an item `properties` list.
 
@@ -8,8 +11,16 @@ Functions to build the building blocks of a STAC `Item`.
 
 - `new_item()`: creates an in-memory `Item` (a GeoJSON `Feature`).
 
-- `stac_add_items()`: persists one or more items into a collection,
-  updating the collection links and spatio-temporal extent.
+- `add_items()`: links one or more items into a collection, updating the
+  collection links and spatio-temporal extent, and returns the
+  collection.
+
+STAC requires every item to carry a `datetime`. When you describe a time
+range instead of a single instant, supply `start_datetime` and
+`end_datetime` and omit `datetime`; `new_properties()` then records
+`datetime` as `null`, as the specification mandates. `add_items()`
+derives the collection's temporal extent from the range (or from
+`datetime` when only that is given).
 
 ## Usage
 
@@ -32,11 +43,12 @@ new_item(
   geometry = NULL,
   properties = new_properties(),
   assets = list(),
+  collection = NULL,
   stac_version = "1.0.0",
   ...
 )
 
-stac_add_items(collection, ..., root_dir = ".")
+add_items(collection, items)
 ```
 
 ## Arguments
@@ -47,7 +59,8 @@ stac_add_items(collection, ..., root_dir = ".")
 
 - datetime:
 
-  A `character` RFC 3339 datetime, or `NULL`.
+  A `character` RFC 3339 datetime, or `NULL`. Recorded as `null` when
+  omitted alongside a `start_datetime`/`end_datetime` range.
 
 - start_datetime:
 
@@ -102,18 +115,24 @@ stac_add_items(collection, ..., root_dir = ".")
 
   A named `list` of assets, e.g. from `new_asset()`.
 
+- collection:
+
+  For `add_items()`, the `doc_collection` to link items into. For
+  `new_item()`, an optional `doc_collection` or `character` collection
+  id recorded as the item's top-level `collection` field. STAC requires
+  this field whenever the item carries a `collection` link (as items
+  built here always do); when omitted,
+  [`stac_save()`](https://rolfsimoes.github.io/rstatic/reference/stac_save.md)
+  stamps it from the `collection` it is given.
+
 - stac_version:
 
   A `character` STAC version. Defaults to `"1.0.0"`.
 
-- collection:
+- items:
 
-  A `doc_collection` object to add items to.
-
-- root_dir:
-
-  A `character` directory under which documents are written. Defaults to
-  the current working directory.
+  A single `doc_item`, or a `list` of `doc_item` objects, to link into
+  the collection.
 
 ## Value
 
@@ -123,7 +142,7 @@ stac_add_items(collection, ..., root_dir = ".")
 
 - `new_item()`: a `doc_item` object.
 
-- `stac_add_items()`: invisibly, the updated `doc_collection`.
+- `add_items()`: the updated `doc_collection`.
 
 ## Examples
 
@@ -139,15 +158,8 @@ item <- new_item(
 item$type
 #> [1] "Feature"
 
-dir <- tempfile("stac-")
-cat <- stac_init("cat", "Catalog", "Example", root_dir = dir)
-#> Catalog cat initialized/updated at /tmp/RtmpHpTfbU/stac-1cc53b2518a4/stac/catalog.json
-col <- stac_add_collection(
-  cat,
-  collection = new_collection("col", "Collection", "Example"),
-  root_dir = dir
-)
-#> Collection col added to Catalog.
-stac_add_items(col, item, root_dir = dir)
-#> Added 1 item(s) to collection cat.
+col <- new_collection("col", "Collection", "Example")
+col <- add_items(col, item)
+col$extent$spatial$bbox[[1]]
+#> [1] -50 -10 -49  -9
 ```

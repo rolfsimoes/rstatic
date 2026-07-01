@@ -1,23 +1,30 @@
 <urlset xmlns = 'http://www.sitemaps.org/schemas/sitemap/0.9'>
 <url><loc>https://rolfsimoes.github.io/rstatic/404.html</loc></url>
+<url><loc>https://rolfsimoes.github.io/rstatic/AGENTS.html</loc></url>
+<url><loc>https://rolfsimoes.github.io/rstatic/CLAUDE.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/LICENSE.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/articles/index.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/articles/rstatic.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/authors.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/index.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/news/index.html</loc></url>
+<url><loc>https://rolfsimoes.github.io/rstatic/reference/add_asset.html</loc></url>
+<url><loc>https://rolfsimoes.github.io/rstatic/reference/add_link.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/reference/catalog_functions.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/reference/collection_functions.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/reference/geom_functions.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/reference/index.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/reference/item_functions.html</loc></url>
+<url><loc>https://rolfsimoes.github.io/rstatic/reference/list_links.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/reference/new_thumbnail.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/reference/plot_rstatic.html</loc></url>
+<url><loc>https://rolfsimoes.github.io/rstatic/reference/print.rstatic_style.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/reference/print_rstatic.html</loc></url>
+<url><loc>https://rolfsimoes.github.io/rstatic/reference/qml_to_style.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/reference/rstatic-package.html</loc></url>
-<url><loc>https://rolfsimoes.github.io/rstatic/reference/stac_add_asset.html</loc></url>
-<url><loc>https://rolfsimoes.github.io/rstatic/reference/stac_add_link.html</loc></url>
+<url><loc>https://rolfsimoes.github.io/rstatic/reference/stac_read.html</loc></url>
 <url><loc>https://rolfsimoes.github.io/rstatic/reference/stac_save.html</loc></url>
-<url><loc>https://rolfsimoes.github.io/rstatic/reference/style_functions.html</loc></url>
+<url><loc>https://rolfsimoes.github.io/rstatic/reference/stac_style.html</loc></url>
+<url><loc>https://rolfsimoes.github.io/rstatic/reference/update_root.html</loc></url>
 </urlset>
 

@@ -4,7 +4,13 @@ Helper functions to derive the spatial metadata required by STAC items.
 
 - `extract_bbox()`: reads a raster (local or remote) and returns its
   bounding box in WGS84 (`EPSG:4326`). This function requires the
-  optional terra package.
+  optional terra package. It is generic: pass either a `character` path
+  or URL, or a `doc_asset` from
+  [`new_asset()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md),
+  in which case the raster is read from the asset's resolved
+  `local_path` (see
+  [`update_root()`](https://rolfsimoes.github.io/rstatic/reference/update_root.md))
+  or its `href`.
 
 - `as_geometry()`: converts a bounding box into a GeoJSON `Polygon`
   geometry. This function has no external dependencies.
@@ -17,17 +23,25 @@ and, optionally, a geometry created with `as_geometry()`.
 ## Usage
 
 ``` r
-extract_bbox(url)
+extract_bbox(x)
+
+# S3 method for class 'character'
+extract_bbox(x)
+
+# S3 method for class 'doc_asset'
+extract_bbox(x)
 
 as_geometry(bbox)
 ```
 
 ## Arguments
 
-- url:
+- x:
 
-  A `character` path or URL to a raster file readable by terra. Remote
-  `http(s)` URLs are accessed through GDAL's `/vsicurl/` driver.
+  A `character` path or URL to a raster file readable by terra, or a
+  `doc_asset` from
+  [`new_asset()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md).
+  Remote `http(s)` URLs are accessed through GDAL's `/vsicurl/` driver.
 
 - bbox:
 
@@ -48,36 +62,20 @@ as_geometry(bbox)
 # as_geometry() works without any optional dependency
 bbox <- c(-50, -10, -49, -9)
 as_geometry(bbox)
-#> $type
-#> [1] "Polygon"
-#> 
-#> $coordinates
-#> $coordinates[[1]]
-#> $coordinates[[1]][[1]]
-#> [1] -50 -10
-#> 
-#> $coordinates[[1]][[2]]
-#> [1] -49 -10
-#> 
-#> $coordinates[[1]][[3]]
-#> [1] -49  -9
-#> 
-#> $coordinates[[1]][[4]]
-#> [1] -50  -9
-#> 
-#> $coordinates[[1]][[5]]
-#> [1] -50 -10
-#> 
-#> 
-#> 
+#> <GeoJSON Geometry: Polygon>
+#>   bbox: -50, -10, -49, -9
 
 # extract_bbox() requires terra
 if (requireNamespace("terra", quietly = TRUE)) {
-  f <- system.file("extdata/example.tif", package = "rstatic")
+  f <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.tif",
+                    package = "rstatic")
   if (nzchar(f)) {
+    # from a path or URL
     extract_bbox(f)
+    # or directly from an asset
+    extract_bbox(new_asset(f, title = "B04"))
   }
 }
 #>       xmin       ymin       xmax       ymax 
-#> -63.636579  -8.630220 -63.450282  -8.491029 
+#> -63.636579  -8.630257 -63.418217  -8.412882 
 ```

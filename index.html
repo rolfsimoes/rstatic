@@ -13,6 +13,7 @@
 <script src="deps/headroom-0.11.0/headroom.min.js"></script><script src="deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="deps/search-1.0.0/fuse.min.js"></script><script src="deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="pkgdown.js"></script><meta property="og:title" content="Primitives to Generate Static SpatioTemporal Asset Catalogs">
 <meta name="description" content="Provides reusable primitives to build and serialize static SpatioTemporal Asset Catalog (STAC) documents, including catalogs, collections, items, assets, and links. The package implements the STAC specification version 1.0.0 (&lt;https://github.com/radiantearth/stac-spec&gt;) and is intended as a foundation for other tools, such as STAC generators and experiment catalog builders. Optional spatial metadata extraction and thumbnail rendering are supported through terra, and QGIS style parsing through xml2, when these packages are available.">
 <meta property="og:description" content="Provides reusable primitives to build and serialize static SpatioTemporal Asset Catalog (STAC) documents, including catalogs, collections, items, assets, and links. The package implements the STAC specification version 1.0.0 (&lt;https://github.com/radiantearth/stac-spec&gt;) and is intended as a foundation for other tools, such as STAC generators and experiment catalog builders. Optional spatial metadata extraction and thumbnail rendering are supported through terra, and QGIS style parsing through xml2, when these packages are available.">
+<meta property="og:image" content="https://rolfsimoes.github.io/rstatic/logo.png">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -22,7 +23,7 @@
 
     <a class="navbar-brand me-2" href="index.html">rstatic</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.1.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,21 +49,26 @@
 </nav><div class="container template-home">
 <div class="row">
   <main id="main" class="col-md-9"><div class="section level1">
-<div class="page-header"><h1 id="rstatic-">rstatic <img src="inst/extdata/img/logo.png" align="right" width="120"><a class="anchor" aria-label="anchor" href="#rstatic-"></a>
-</h1></div>
-<p>Primitives to generate <strong>static</strong> SpatioTemporal Asset Catalogs (STAC).</p>
+<div class="page-header">
+<img src="logo.png" class="logo" alt=""><h1 id="rstatic-">rstatic <a class="anchor" aria-label="anchor" href="#rstatic-"></a>
+</h1>
+</div>
+<p>Build browsable, server-less <strong>static</strong> SpatioTemporal Asset Catalogs (STAC) from R.</p>
 <!-- badges: start -->
 
-<p>STAC is a specification of files and web services used to describe geospatial information assets. The specification can be consulted at <a href="https://stacspec.org/" class="external-link uri">https://stacspec.org/</a>.</p>
-<p><code>rstatic</code> provides small, composable <strong>primitives</strong> to build and serialize static STAC documents (catalogs, collections, items, assets, and links). It is designed to be a reusable foundation that other packages (e.g. STAC generators, experiment catalog builders) can rely on. It implements the STAC specification version 1.0.0.</p>
-<p>Optional features rely on suggested packages and degrade gracefully when they are not installed:</p>
+<p><code>rstatic</code> turns a folder of geospatial assets into a valid <a href="https://stacspec.org/" class="external-link">STAC</a> catalog you can publish anywhere static files are served — GitHub Pages, an S3 bucket, or a plain web server. No database and no running service are required.</p>
+<p>It does this through small, composable <strong>primitives</strong> for catalogs, collections, items, assets, and links. Each one is a pure builder or an explicit write to disk, so you stay in control of what gets created and where. This makes <code>rstatic</code> equally useful on its own and as a foundation for higher-level tools such as STAC generators and experiment catalog builders. It implements STAC specification version 1.0.0.</p>
+<div class="section level2">
+<h2 id="features">Features<a class="anchor" aria-label="anchor" href="#features"></a>
+</h2>
 <ul>
-<li>
-<strong><code>terra</code></strong> — bounding-box extraction (<code><a href="reference/geom_functions.html">extract_bbox()</a></code>) and thumbnail rendering (<code><a href="reference/new_thumbnail.html">new_thumbnail()</a></code>).</li>
-<li>
-<strong><code>xml2</code></strong> — QGIS style parsing (<code><a href="reference/style_functions.html">qml_to_style()</a></code>).</li>
+<li>Build catalogs, collections, items, assets, and links with simple constructor functions.</li>
+<li>Serialize any document to its canonical static-catalog path on disk.</li>
+<li>Track spatial and temporal extents automatically as items are added.</li>
+<li>Optionally extract bounding boxes from rasters, render PNG thumbnail assets, and import QGIS layer styles.</li>
 </ul>
-<p>If these packages are unavailable, you can still build documents by supplying bounding boxes, geometries, and styles manually.</p>
+<p>The optional helpers activate automatically when their supporting packages are installed; otherwise you can still build complete catalogs by supplying bounding boxes, geometries, and styles yourself.</p>
+</div>
 <div class="section level2">
 <h2 id="installation">Installation<a class="anchor" aria-label="anchor" href="#installation"></a>
 </h2>
@@ -80,25 +86,19 @@
 <span></span>
 <span><span class="va">root</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/tempfile.html" class="external-link">tempfile</a></span><span class="op">(</span><span class="st">"stac-"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 1. Initialize the root catalog</span></span>
-<span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/catalog_functions.html">stac_init</a></span><span class="op">(</span></span>
+<span><span class="co"># 1. Build the documents in memory (pure -- nothing is written yet)</span></span>
+<span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/catalog_functions.html">new_catalog</a></span><span class="op">(</span></span>
 <span>  id <span class="op">=</span> <span class="st">"example"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Example Catalog"</span>,</span>
-<span>  description <span class="op">=</span> <span class="st">"A minimal static STAC catalog"</span>,</span>
-<span>  root_dir <span class="op">=</span> <span class="va">root</span></span>
+<span>  description <span class="op">=</span> <span class="st">"A minimal static STAC catalog"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="co">#&gt; Catalog example initialized/updated at /tmp/RtmpGSJL3d/stac-40dac6ac2aaab/stac/catalog.json</span></span>
 <span></span>
-<span><span class="co"># 2. Add a collection</span></span>
 <span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/collection_functions.html">new_collection</a></span><span class="op">(</span></span>
 <span>  id <span class="op">=</span> <span class="st">"land-cover"</span>,</span>
 <span>  title <span class="op">=</span> <span class="st">"Land Cover"</span>,</span>
 <span>  description <span class="op">=</span> <span class="st">"Example land cover collection"</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/collection_functions.html">stac_add_collection</a></span><span class="op">(</span><span class="va">catalog</span>, collection <span class="op">=</span> <span class="va">collection</span>, root_dir <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Collection land-cover added to Catalog.</span></span>
 <span></span>
-<span><span class="co"># 3. Build and add an item</span></span>
 <span><span class="va">item</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/item_functions.html">new_item</a></span><span class="op">(</span></span>
 <span>  id <span class="op">=</span> <span class="st">"land-cover-2020"</span>,</span>
 <span>  bbox <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">50</span>, <span class="op">-</span><span class="fl">10</span>, <span class="op">-</span><span class="fl">49</span>, <span class="op">-</span><span class="fl">9</span><span class="op">)</span>,</span>
@@ -108,14 +108,20 @@
 <span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/item_functions.html">stac_add_items</a></span><span class="op">(</span><span class="va">collection</span>, <span class="va">item</span>, root_dir <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Added 1 item(s) to collection land-cover.</span></span></code></pre></div>
-<p>The resulting directory follows the canonical static catalog layout:</p>
+<span><span class="co"># 2. Link them with the pure add_*() builders</span></span>
+<span><span class="va">collection</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/item_functions.html">add_items</a></span><span class="op">(</span><span class="va">collection</span>, <span class="va">item</span><span class="op">)</span></span>
+<span><span class="va">catalog</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/collection_functions.html">add_collection</a></span><span class="op">(</span><span class="va">catalog</span>, <span class="va">collection</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># 3. Persist -- stac_save() is the only writer</span></span>
+<span><span class="fu"><a href="reference/stac_save.html">stac_save</a></span><span class="op">(</span>catalog <span class="op">=</span> <span class="va">catalog</span>, collection <span class="op">=</span> <span class="va">collection</span>, items <span class="op">=</span> <span class="va">item</span>,</span>
+<span>          root_dir <span class="op">=</span> <span class="va">root</span><span class="op">)</span></span></code></pre></div>
+<p>The resulting directory follows the canonical static catalog layout, with the collection linking to its item:</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/file.path.html" class="external-link">file.path</a></span><span class="op">(</span><span class="va">root</span>, <span class="st">"stac"</span><span class="op">)</span>, recursive <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "catalog.json"                                          </span></span>
 <span><span class="co">#&gt; [2] "collections/land-cover/collection.json"                </span></span>
 <span><span class="co">#&gt; [3] "collections/land-cover/items/land-cover-2020/item.json"</span></span></code></pre></div>
+<p>Each file is a self-contained STAC document. To extend a catalog that is already on disk, read it back with <code><a href="reference/stac_read.html">stac_read()</a></code>, add to it, and save again – saving is a pure overwrite, so reading first is what preserves the existing children.</p>
 </div>
 <div class="section level2">
 <h2 id="core-primitives">Core primitives<a class="anchor" aria-label="anchor" href="#core-primitives"></a>
@@ -132,15 +138,9 @@
 <tbody>
 <tr>
 <td align="left">
-<code><a href="reference/catalog_functions.html">new_catalog()</a></code> / <code><a href="reference/catalog_functions.html">stac_init()</a></code>
+<code><a href="reference/catalog_functions.html">new_catalog()</a></code>, <code><a href="reference/collection_functions.html">new_collection()</a></code>
 </td>
-<td align="left">Create / write a root catalog</td>
-</tr>
-<tr>
-<td align="left">
-<code><a href="reference/collection_functions.html">new_collection()</a></code> / <code><a href="reference/collection_functions.html">stac_add_collection()</a></code>
-</td>
-<td align="left">Create / register a collection</td>
+<td align="left">Build catalogs and collections in memory</td>
 </tr>
 <tr>
 <td align="left">
@@ -150,19 +150,23 @@
 </tr>
 <tr>
 <td align="left">
-<code><a href="reference/collection_functions.html">stac_add_collection()</a></code> / <code><a href="reference/item_functions.html">stac_add_items()</a></code>
+<code><a href="reference/collection_functions.html">add_collection()</a></code> / <code><a href="reference/item_functions.html">add_items()</a></code>
 </td>
-<td align="left">Register collections/items and return the parent</td>
+<td align="left">Attach a collection/items to a parent, return it</td>
 </tr>
 <tr>
 <td align="left">
-<code><a href="reference/stac_add_link.html">stac_add_link()</a></code> / <code><a href="reference/stac_add_asset.html">stac_add_asset()</a></code>
+<code><a href="reference/add_link.html">add_link()</a></code> / <code><a href="reference/add_asset.html">add_asset()</a></code>
 </td>
-<td align="left">Pure builders for links and assets</td>
+<td align="left">Attach links and assets</td>
+</tr>
+<tr>
+<td align="left"><code><a href="reference/stac_read.html">stac_read()</a></code></td>
+<td align="left">Read a document from disk (load-or-create with <code>default</code>)</td>
 </tr>
 <tr>
 <td align="left"><code><a href="reference/stac_save.html">stac_save()</a></code></td>
-<td align="left">Write any document to its canonical path</td>
+<td align="left">Write documents to their canonical paths (the only writer)</td>
 </tr>
 <tr>
 <td align="left">
@@ -172,21 +176,44 @@
 </tr>
 <tr>
 <td align="left">
-<code><a href="reference/style_functions.html">stac_style()</a></code> / <code><a href="reference/style_functions.html">qml_to_style()</a></code>
+<code><a href="reference/stac_style.html">stac_style()</a></code> / <code><a href="reference/qml_to_style.html">qml_to_style()</a></code>
 </td>
 <td align="left">Thumbnail style objects</td>
 </tr>
 <tr>
 <td align="left"><code><a href="reference/new_thumbnail.html">new_thumbnail()</a></code></td>
-<td align="left">Render a PNG thumbnail asset</td>
+<td align="left">Describe a PNG thumbnail asset (rendered on save)</td>
 </tr>
 </tbody>
 </table>
+<p><code>new_*()</code> constructors and <code>add_*()</code> builders are pure and never touch disk; <code><a href="reference/stac_read.html">stac_read()</a></code> and <code><a href="reference/stac_save.html">stac_save()</a></code> are the only functions that do.</p>
+</div>
+<div class="section level2">
+<h2 id="documentation">Documentation<a class="anchor" aria-label="anchor" href="#documentation"></a>
+</h2>
+<ul>
+<li>Full function reference and articles: <a href="https://rolfsimoes.github.io/rstatic/" class="uri">https://rolfsimoes.github.io/rstatic/</a>
+</li>
+<li>Get started: <code><a href="articles/rstatic.html">vignette("rstatic")</a></code>
+</li>
+<li>Per-function help, e.g. <code><a href="reference/stac_save.html">?stac_save</a></code>
+</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="getting-help">Getting help<a class="anchor" aria-label="anchor" href="#getting-help"></a>
+</h2>
+<p>Found a bug or have a feature request? Please open an issue at <a href="https://github.com/rolfsimoes/rstatic/issues" class="external-link uri">https://github.com/rolfsimoes/rstatic/issues</a>.</p>
+</div>
+<div class="section level2">
+<h2 id="related-work">Related work<a class="anchor" aria-label="anchor" href="#related-work"></a>
+</h2>
+<p><code>rstatic</code> focuses on <em>writing</em> static catalogs from primitives. If you instead need to <em>query</em> remote STAC APIs from R, see <a href="https://github.com/brazil-data-cube/rstac" class="external-link"><code>rstac</code></a>.</p>
 </div>
 <div class="section level2">
 <h2 id="license">License<a class="anchor" aria-label="anchor" href="#license"></a>
 </h2>
-<p>GPL (&gt;= 3)</p>
+<p>GPL (&gt;= 3). See <a href="LICENSE.html">LICENSE.md</a>.</p>
 </div>
 </div>
   </main><aside class="col-md-3"><div class="links">

@@ -1,42 +1,56 @@
-# Generate a thumbnail asset
+# Describe a thumbnail asset
 
-Renders a PNG thumbnail from a raster and returns a STAC `Asset`
-pointing to it. The thumbnail is written under the canonical item
-directory
-`stac/collections/{collection_id}/items/{item_id}/thumbnail.png`.
+Pure builder that returns a STAC `Asset` describing a PNG thumbnail to
+be rendered from a raster. No raster is read and no file is written
+here: the render *intent* (source raster, width, and style) is carried
+on the asset and materialized later, when the owning item is written
+with
+[`stac_save()`](https://rolfsimoes.github.io/rstatic/reference/stac_save.md).
 
-This function requires the optional terra package. If terra is not
-installed, build the thumbnail asset manually with
-[`new_asset()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md).
+`new_thumbnail()` is generic. Pass the source either as a `character`
+path or URL, or as a `doc_asset` from
+[`new_asset()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md)
+– typically the item's data asset – in which case the raster is taken
+from the asset's resolved `local_path` (see
+[`update_root()`](https://rolfsimoes.github.io/rstatic/reference/update_root.md))
+or its `href`.
+
+The optional `style` argument controls how raster values are mapped to
+pixels. Build it with
+[`stac_style()`](https://rolfsimoes.github.io/rstatic/reference/stac_style.md)
+or
+[`qml_to_style()`](https://rolfsimoes.github.io/rstatic/reference/qml_to_style.md).
+Without a style, the raster is rendered with `terra`'s default settings.
+
+Rendering happens at save time and requires the optional terra package.
+If terra is not available, build the asset manually with
+[`new_asset()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md)
+instead.
 
 ## Usage
 
 ``` r
-new_thumbnail(
-  collection_id,
-  item_id,
-  asset_href,
-  width = 800,
-  title = "Thumbnail",
-  style = NULL,
-  root_dir = ".",
-  ...
-)
+new_thumbnail(x, ...)
+
+# S3 method for class 'character'
+new_thumbnail(x, width = 800, title = "Thumbnail", style = NULL, ...)
+
+# S3 method for class 'doc_asset'
+new_thumbnail(x, width = 800, title = "Thumbnail", style = NULL, ...)
 ```
 
 ## Arguments
 
-- collection_id:
+- x:
 
-  A `character` collection identifier.
+  A `character` path or URL to the source raster, or a `doc_asset` from
+  [`new_asset()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md)
+  pointing at it.
 
-- item_id:
+- ...:
 
-  A `character` item identifier.
-
-- asset_href:
-
-  A `character` path or URL to the source raster.
+  Additional arguments passed to the underlying `terra` plotting
+  function at render time.
 
 - width:
 
@@ -48,43 +62,38 @@ new_thumbnail(
 
 - style:
 
-  An optional style `list` from
-  [`stac_style()`](https://rolfsimoes.github.io/rstatic/reference/style_functions.md)
+  An optional `rstatic_style` object from
+  [`stac_style()`](https://rolfsimoes.github.io/rstatic/reference/stac_style.md)
   or
-  [`qml_to_style()`](https://rolfsimoes.github.io/rstatic/reference/style_functions.md).
-
-- root_dir:
-
-  A `character` directory under which the thumbnail is written. Defaults
-  to the current working directory.
-
-- ...:
-
-  Additional arguments passed to
-  [`terra::plot()`](https://rspatial.github.io/terra/reference/plot.html).
+  [`qml_to_style()`](https://rolfsimoes.github.io/rstatic/reference/qml_to_style.md).
 
 ## Value
 
-A `list` describing the thumbnail asset (as from
-[`new_asset()`](https://rolfsimoes.github.io/rstatic/reference/item_functions.md)).
+A `doc_asset` with `href` `"thumbnail.png"` and roles `"thumbnail"`,
+carrying the render intent so
+[`stac_save()`](https://rolfsimoes.github.io/rstatic/reference/stac_save.md)
+can produce the PNG.
 
 ## Examples
 
 ``` r
-if (requireNamespace("terra", quietly = TRUE)) {
-  f <- system.file("extdata/example.tif", package = "rstatic")
-  if (nzchar(f)) {
-    dir <- tempfile("stac-")
-    new_thumbnail(
-      collection_id = "col",
-      item_id = "item-1",
-      asset_href = f,
-      root_dir = dir
-    )
-  }
-}
-#> # STAC Asset Thumbnail
-#>   href   thumbnail.png
-#>   type   image/png
-#>   roles  thumbnail
+f <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.tif",
+    package = "rstatic"
+)
+style <- stac_style(min = 192, max = 1371, palette = c("black", "white"))
+
+# Build an item with a data asset, then derive the thumbnail from that asset.
+item <- new_item(
+    "item-1",
+    bbox = c(-50, -10, -49, -9),
+    assets = list(data = new_asset(f, title = "B04"))
+)
+thumb <- new_thumbnail(item$assets$data, style = style)
+item <- add_asset(item, "thumbnail", thumb)
+
+# A plain path or URL works too.
+new_thumbnail(f, style = style)$roles
+#> [[1]]
+#> [1] "thumbnail"
+#> 
 ```

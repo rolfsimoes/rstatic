@@ -16,6 +16,8 @@ Useful links:
 
 - <https://github.com/rolfsimoes/rstatic>
 
+- <https://rolfsimoes.github.io/rstatic>
+
 - Report bugs at <https://github.com/rolfsimoes/rstatic/issues>
 
 ## Author

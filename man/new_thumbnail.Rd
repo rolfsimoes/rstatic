@@ -51,14 +51,15 @@ package. If \pkg{terra} is not available, build the asset manually with
 }
 \examples{
 f <- system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.tif",
-                  package = "rstatic")
+    package = "rstatic"
+)
 style <- stac_style(min = 192, max = 1371, palette = c("black", "white"))
 
 # Build an item with a data asset, then derive the thumbnail from that asset.
 item <- new_item(
-  "item-1",
-  bbox = c(-50, -10, -49, -9),
-  assets = list(data = new_asset(f, title = "B04"))
+    "item-1",
+    bbox = c(-50, -10, -49, -9),
+    assets = list(data = new_asset(f, title = "B04"))
 )
 thumb <- new_thumbnail(item$assets$data, style = style)
 item <- add_asset(item, "thumbnail", thumb)

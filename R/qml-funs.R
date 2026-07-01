@@ -45,13 +45,13 @@ qml_to_style <- function(qml_path) {
   }
 
   qml <- xml2::read_xml(qml_path)
-  renderer <- qml_renderer_type(qml)
+  renderer <- .qml_renderer_type(qml)
 
   switch(
     renderer,
-    paletted = qml_paletted_to_style(qml),
-    singlebandgray = qml_gray_to_style(qml),
-    singlebandpseudocolor = qml_pseudocolor_to_style(qml),
+    paletted = .qml_paletted_to_style(qml),
+    singlebandgray = .qml_gray_to_style(qml),
+    singlebandpseudocolor = .qml_pseudocolor_to_style(qml),
     stop("Unsupported QML raster renderer: ", renderer, call. = FALSE)
   )
 }
@@ -60,7 +60,7 @@ qml_to_style <- function(qml_path) {
 #'
 #' @keywords internal
 #' @noRd
-qml_renderer_type <- function(qml) {
+.qml_renderer_type <- function(qml) {
   renderer <- xml2::xml_find_first(qml, "//rasterrenderer")
   if (inherits(renderer, "xml_missing")) {
     stop("No raster renderer found in QML file.", call. = FALSE)
@@ -75,7 +75,7 @@ qml_renderer_type <- function(qml) {
 #'
 #' @keywords internal
 #' @noRd
-qml_nodata <- function(qml) {
+.qml_nodata <- function(qml) {
   entries <- xml2::xml_find_all(qml, "//rastertransparency//pixelListEntry")
   if (length(entries) == 0L) {
     return(NULL)
@@ -114,7 +114,7 @@ qml_nodata <- function(qml) {
 #'
 #' @keywords internal
 #' @noRd
-qml_paletted_to_style <- function(qml) {
+.qml_paletted_to_style <- function(qml) {
   entries <- xml2::xml_find_all(qml, "//paletteEntry")
   if (length(entries) == 0L) {
     stop("QML paletted renderer has no palette entries.", call. = FALSE)
@@ -138,7 +138,7 @@ qml_paletted_to_style <- function(qml) {
     values = values,
     colors = colors,
     labels = labels,
-    nodata = qml_nodata(qml)
+    nodata = .qml_nodata(qml)
   )
 }
 
@@ -146,11 +146,11 @@ qml_paletted_to_style <- function(qml) {
 #'
 #' @keywords internal
 #' @noRd
-qml_gray_to_style <- function(qml) {
+.qml_gray_to_style <- function(qml) {
   renderer <- xml2::xml_find_first(qml, "//rasterrenderer")
 
-  min_val <- qml_numeric(qml, "//rasterrenderer/contrastEnhancement/minValue")
-  max_val <- qml_numeric(qml, "//rasterrenderer/contrastEnhancement/maxValue")
+  min_val <- .qml_numeric(qml, "//rasterrenderer/contrastEnhancement/minValue")
+  max_val <- .qml_numeric(qml, "//rasterrenderer/contrastEnhancement/maxValue")
 
   gradient <- xml2::xml_attr(renderer, "gradient")
   palette <- if (identical(gradient, "WhiteToBlack")) {
@@ -163,8 +163,8 @@ qml_gray_to_style <- function(qml) {
     min = min_val,
     max = max_val,
     palette = palette,
-    nodata = qml_nodata(qml),
-    gamma = qml_gamma(qml)
+    nodata = .qml_nodata(qml),
+    gamma = .qml_gamma(qml)
   )
 }
 
@@ -172,7 +172,7 @@ qml_gray_to_style <- function(qml) {
 #'
 #' @keywords internal
 #' @noRd
-qml_pseudocolor_to_style <- function(qml) {
+.qml_pseudocolor_to_style <- function(qml) {
   renderer <- xml2::xml_find_first(qml, "//rasterrenderer")
   shader <- xml2::xml_find_first(qml, "//colorrampshader")
 
@@ -202,7 +202,7 @@ qml_pseudocolor_to_style <- function(qml) {
     min = min_val,
     max = max_val,
     palette = palette,
-    nodata = qml_nodata(qml)
+    nodata = .qml_nodata(qml)
   )
 }
 
@@ -210,7 +210,7 @@ qml_pseudocolor_to_style <- function(qml) {
 #'
 #' @keywords internal
 #' @noRd
-qml_numeric <- function(qml, xpath) {
+.qml_numeric <- function(qml, xpath) {
   node <- xml2::xml_find_first(qml, xpath)
   if (inherits(node, "xml_missing")) {
     return(NULL)
@@ -225,7 +225,7 @@ qml_numeric <- function(qml, xpath) {
 #'
 #' @keywords internal
 #' @noRd
-qml_gamma <- function(qml) {
+.qml_gamma <- function(qml) {
   node <- xml2::xml_find_first(qml, "//brightnesscontrast")
   if (inherits(node, "xml_missing")) {
     return(NULL)

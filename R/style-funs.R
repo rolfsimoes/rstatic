@@ -77,9 +77,9 @@ stac_style <- function(bands = NULL,
                        nodata = NULL,
                        opacity = NULL,
                        gamma = NULL) {
-  mode <- style_mode(bands, values, colors, labels)
+  mode <- .style_mode(bands, values, colors, labels)
 
-  validate_style_inputs(
+  .validate_style_inputs(
     mode = mode,
     bands = bands,
     min = min,
@@ -97,7 +97,7 @@ stac_style <- function(bands = NULL,
 
   style <- switch(
     mode,
-    categorical = new_style_categorical(
+    categorical = .new_style_categorical(
       bands = bands,
       values = values,
       colors = colors,
@@ -105,7 +105,7 @@ stac_style <- function(bands = NULL,
       nodata = nodata,
       opacity = opacity
     ),
-    rgb = new_style_rgb(
+    rgb = .new_style_rgb(
       bands = bands,
       min = min,
       max = max,
@@ -115,7 +115,7 @@ stac_style <- function(bands = NULL,
       opacity = opacity,
       gamma = gamma
     ),
-    continuous = new_style_continuous(
+    continuous = .new_style_continuous(
       bands = bands,
       min = min,
       max = max,
@@ -135,7 +135,7 @@ stac_style <- function(bands = NULL,
 #'
 #' @keywords internal
 #' @noRd
-style_mode <- function(bands, values, colors, labels) {
+.style_mode <- function(bands, values, colors, labels) {
   if (!is.null(values) || !is.null(colors) || !is.null(labels)) {
     "categorical"
   } else if (!is.null(bands) && length(bands) == 3L) {
@@ -149,7 +149,7 @@ style_mode <- function(bands, values, colors, labels) {
 #'
 #' @keywords internal
 #' @noRd
-validate_style_inputs <- function(mode, bands, min, max, pmin, pmax, palette,
+.validate_style_inputs <- function(mode, bands, min, max, pmin, pmax, palette,
                                   values, colors, labels, nodata, opacity,
                                   gamma) {
   if (!is.null(bands) && !length(bands) %in% c(1L, 3L)) {
@@ -209,7 +209,7 @@ validate_style_inputs <- function(mode, bands, min, max, pmin, pmax, palette,
 #'
 #' @keywords internal
 #' @noRd
-new_style_categorical <- function(bands, values, colors, labels, nodata,
+.new_style_categorical <- function(bands, values, colors, labels, nodata,
                                   opacity) {
   if (is.null(labels)) {
     labels <- as.character(values)
@@ -232,7 +232,7 @@ new_style_categorical <- function(bands, values, colors, labels, nodata,
 #'
 #' @keywords internal
 #' @noRd
-new_style_continuous <- function(bands, min, max, pmin, pmax, palette, nodata,
+.new_style_continuous <- function(bands, min, max, pmin, pmax, palette, nodata,
                                  opacity, gamma) {
   list(
     mode = "continuous",
@@ -252,7 +252,7 @@ new_style_continuous <- function(bands, min, max, pmin, pmax, palette, nodata,
 #'
 #' @keywords internal
 #' @noRd
-new_style_rgb <- function(bands, min, max, pmin, pmax, nodata, opacity, gamma) {
+.new_style_rgb <- function(bands, min, max, pmin, pmax, nodata, opacity, gamma) {
   list(
     mode = "rgb",
     bands = bands,

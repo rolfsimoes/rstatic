@@ -151,8 +151,7 @@ without writing anything on disk. The temporal extent picks up the item's
 
 ```{r add-items}
 collection <- add_items(collection, item)
-print(collection$extent$spatial$bbox[[1]])
-print(collection$extent$temporal$interval[[1]])
+collection
 ```
 
 ## 6. Thumbnails and styles (optional)
@@ -169,7 +168,7 @@ The LULC raster shipped with the package
 classification map for 2022, derived from a Sentinel-2 L2A data cube over tile
 `20LMR` in Rondônia state, Brazil. Each pixel holds an integer class from 1 to
 9, with 0 marking nodata. The data cube and training points are available in the
-[`sitsdata` repository](https://github.com/e-sensing/sitsdata).
+[`sitsdata`](https://github.com/e-sensing/sitsdata) repository.
 
 The style type is inferred from the parameters rather than chosen explicitly.
 Supplying `values` and `colors` produces a categorical style, suitable for a
@@ -210,7 +209,7 @@ only attach it when `terra` is available:
 ```{r thumbnail, eval = has_terra}
 thumb <- new_thumbnail(
   item$assets$data,
-  width = 200,
+  width = 400,
   style = land_cover_style
 )
 item <- add_asset(item, "thumbnail", thumb)
@@ -232,8 +231,7 @@ stac_save(catalog = catalog, collection = collection, items = item,
 When a thumbnail was attached, its PNG now exists under the item directory.
 The in-memory asset still carries only the relative `href` `"thumbnail.png"`,
 so `update_root()` re-points it at the rendered file under `root` before
-plotting. Because the item records its own `collection`, that is all
-`update_root()` needs to locate the file:
+plotting:
 
 ```{r thumbnail-plot, eval = has_terra && requireNamespace("png", quietly = TRUE), fig.cap = "Categorical land-cover thumbnail rendered at save time."}
 item <- update_root(item, root)
@@ -245,7 +243,7 @@ plot(item$assets$thumbnail)
 The same machinery renders continuous rasters. The package also ships a single
 Sentinel-2 L2A band (`S2_MSI_20LMR_B04_2022-07-16.tif`): the red band (B04) of
 tile `20LMR`, acquired on 16 July 2022. Its pixels are surface-reflectance
-values scaled to integers (x1000, roughly 190-1400 over this scene), not class codes.
+values scaled to integers (x1000, roughly 190-1400 over this scene).
 
 With neither `values`/`colors` nor three `bands`, `stac_style()` infers a
 *continuous* style. A `grayscale` ramp stretches the reflectance range between
@@ -256,17 +254,17 @@ b04_path <- system.file(
   "extdata/s2/S2_MSI_20LMR_B04_2022-07-16.tif",
   package = "rstatic"
 )
-b04_style <- stac_style(min = 192, max = 1371, palette = c("black", "white"))
-b04_style
+stac_style(min = 192, max = 1371, palette = c("black", "white"))
 ```
 
 The matching QML is a single-band pseudocolor style, which `qml_to_style()`
 converts to a continuous color ramp:
 
 ```{r qml-continuous, eval = requireNamespace("xml2", quietly = TRUE)}
-qml_to_style(
+b04_style <- qml_to_style(
   system.file("extdata/s2/S2_MSI_20LMR_B04_2022-07-16.qml", package = "rstatic")
 )
+b04_style
 ```
 
 To preview the band as part of the same catalog, give it its own collection,
@@ -276,7 +274,7 @@ around a `data` asset, so the same asset feeds both `extract_bbox()` and
 `new_thumbnail()`. Then resolve the rendered PNG with `update_root()` and plot
 it:
 
-```{r b04-plot, eval = has_terra && requireNamespace("png", quietly = TRUE), fig.cap = "Grayscale stretch of the Sentinel-2 B04 (red) band."}
+```{r b04-plot, eval = has_terra && requireNamespace("png", quietly = TRUE), fig.cap = "Pseudocolor stretch of the Sentinel-2 B04 (red) band."}
 s2_collection <- new_collection(
   "sentinel-2-l2a", "Sentinel-2 L2A", "Single-band reflectance preview"
 )
@@ -290,7 +288,7 @@ b04_item <- new_item(
 )
 b04_item <- add_asset(
   b04_item, "thumbnail",
-  new_thumbnail(b04_item$assets$data, width = 200, style = b04_style)
+  new_thumbnail(b04_item$assets$data, width = 400, style = b04_style)
 )
 s2_collection <- add_items(s2_collection, b04_item)
 catalog <- add_collection(catalog, s2_collection)
@@ -304,8 +302,8 @@ plot(b04_item$assets$thumbnail)
 
 ## 9. Update a catalog already on disk
 
-To add to a catalog that is already persisted -- typically from a *separate*
-script populating the same catalog over time -- read it back, build in memory,
+To add to a catalog that is already persisted (typically from a *separate*
+script populating the same catalog over time) read it back, build in memory,
 and save again. Because `stac_save()` never merges implicitly, reading first is
 what preserves the children already registered on disk:
 
@@ -324,8 +322,8 @@ catalog <- add_collection(catalog, deforestation)
 stac_save(catalog = catalog, collection = deforestation, root_dir = root)
 
 # The catalog now links every collection (land-cover, sentinel-2-l2a,
-# and deforestation).
-Filter(function(l) l$rel == "child", catalog$links)
+# and deforestation). `list_links()` filters by any link field.
+list_links(catalog, rel == "child")
 ```
 
 ## Resulting catalog
